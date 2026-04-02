@@ -60,12 +60,16 @@ func Resize(gif *gifstd.GIF, width, height int) (*gifstd.GIF, error) {
 		newImages[index] = out
 	}
 
+	config := gif.Config
+	config.Width = width
+	config.Height = height
+
 	return &gifstd.GIF{
 		Image:           newImages,
 		Delay:           gif.Delay,
 		LoopCount:       gif.LoopCount,
 		Disposal:        gif.Disposal,
-		Config:          gif.Config,
+		Config:          config,
 		BackgroundIndex: gif.BackgroundIndex,
 	}, nil
 }
