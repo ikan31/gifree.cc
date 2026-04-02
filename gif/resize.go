@@ -1,30 +1,29 @@
 package gif
 
 import (
-	"fmt"
 	"image"
-	"image/draw"
+	gifstd "image/gif"
 
-	xdraw "golang.org/x/image/draw"
+	"golang.org/x/image/draw"
 )
 
 // Resize scales every frame of the GIF to the given dimensions.
 // Pass width=0 to auto-calculate from height, or height=0 to auto-calculate from width.
-func Resize(g *GIFFile, width, height int) (*GIFFile, error) {
-	if len(g.Frames) == 0 {
-		return nil, fmt.Errorf("gif has no frames")
+func Resize(gif *gifstd.GIF, width, height int) (*gifstd.GIF, error) {
+	if len(gif.Image) == 0 {
+		return nil, ErrNoFrames
 	}
 
-	origW := g.Frames[0].Bounds().Dx()
-	origH := g.Frames[0].Bounds().Dy()
+	origW := gif.Image[0].Bounds().Dx()
+	origH := gif.Image[0].Bounds().Dy()
 
 	if origW == 0 || origH == 0 {
-		return nil, fmt.Errorf("invalid source dimensions")
+		return nil, ErrInvalidDimensions
 	}
 
 	// Calculate missing dimension maintaining aspect ratio
 	if width == 0 && height == 0 {
-		return nil, fmt.Errorf("width or height must be specified")
+		return nil, ErrResizeDimensions
 	}
 	if width == 0 {
 		width = height * origW / origH
@@ -39,25 +38,34 @@ func Resize(g *GIFFile, width, height int) (*GIFFile, error) {
 		height = 1
 	}
 
-	newFrames := make([]*image.Paletted, len(g.Frames))
-	dst := image.NewRGBA(image.Rect(0, 0, width, height))
+	newImages := make([]*image.Paletted, len(gif.Image))
 
-	for i, frame := range g.Frames {
+	// RGBA Image to do operations
+	rgbaImage := image.NewRGBA(image.Rect(0, 0, width, height))
+
+	for index, sourceImage := range gif.Image {
 		// Scale frame onto RGBA canvas
-		xdraw.BiLinear.Scale(dst, dst.Bounds(), frame, frame.Bounds(), xdraw.Src, nil)
+		draw.BiLinear.Scale(
+			rgbaImage,
+			rgbaImage.Bounds(),
+			sourceImage,
+			sourceImage.Bounds(),
+			draw.Src,
+			nil,
+		)
 
 		// Convert back to paletted using original palette
-		out := image.NewPaletted(dst.Bounds(), frame.Palette)
-		draw.FloydSteinberg.Draw(out, dst.Bounds(), dst, image.Point{})
-		newFrames[i] = out
+		out := image.NewPaletted(rgbaImage.Bounds(), sourceImage.Palette)
+		draw.FloydSteinberg.Draw(out, rgbaImage.Bounds(), rgbaImage, image.Point{X: 0, Y: 0})
+		newImages[index] = out
 	}
 
-	delays := make([]int, len(g.Delays))
-	copy(delays, g.Delays)
-
-	return &GIFFile{
-		Frames:    newFrames,
-		Delays:    delays,
-		LoopCount: g.LoopCount,
+	return &gifstd.GIF{
+		Image:           newImages,
+		Delay:           gif.Delay,
+		LoopCount:       gif.LoopCount,
+		Disposal:        gif.Disposal,
+		Config:          gif.Config,
+		BackgroundIndex: gif.BackgroundIndex,
 	}, nil
 }

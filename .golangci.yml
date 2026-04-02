@@ -1,0 +1,33 @@
+version: "2"
+
+formatters:
+  enable:
+    - goimports
+    - gofumpt
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/ikan31/gifree.cc
+
+linters:
+  default: all
+  
+  disable:
+    - wsl
+    - wsl_v5
+    - varnamelen
+    - mnd
+    - godot
+    - depguard
+    - cyclop
+  
+  settings:
+    funlen:
+      lines: 100
+      statements: 100
+
+  exclusions:
+    rules:
+      - linters:
+          - staticcheck
+        text: "ST1005:"

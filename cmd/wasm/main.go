@@ -1,15 +1,22 @@
 //go:build js && wasm
 
+// Package main is the WebAssembly entry point for gifree.
 package main
 
 import (
+	"errors"
 	"fmt"
 	"syscall/js"
+
+	stdgif "image/gif"
 
 	"github.com/ikan31/gifree-app/gif"
 )
 
-var current *gif.GIFFile
+var (
+	current          *stdgif.GIF //nolint:gochecknoglobals // holds WASM working state between JS calls
+	ErrUnknownEffect = errors.New("unknown effect")
+)
 
 func main() {
 	js.Global().Set("gifLoad", js.FuncOf(jsLoad))
@@ -23,36 +30,37 @@ func main() {
 	select {}
 }
 
-func resultOK(g *gif.GIFFile) map[string]interface{} {
+func resultOK(g *stdgif.GIF) map[string]any {
 	data, err := gif.EncodeBytes(g)
 	if err != nil {
 		return resultErr(err)
 	}
 	w, h := 0, 0
-	if len(g.Frames) > 0 {
-		b := g.Frames[0].Bounds()
+	if len(g.Image) > 0 {
+		b := g.Image[0].Bounds()
 		w, h = b.Dx(), b.Dy()
 	}
 	buf := js.Global().Get("Uint8Array").New(len(data))
 	js.CopyBytesToJS(buf, data)
-	return map[string]interface{}{
+
+	return map[string]any{
 		"ok":     true,
 		"bytes":  buf,
-		"frames": len(g.Frames),
+		"frames": len(g.Image),
 		"width":  w,
 		"height": h,
 		"size":   len(data),
 	}
 }
 
-func resultErr(err error) map[string]interface{} {
-	return map[string]interface{}{
+func resultErr(err error) map[string]any {
+	return map[string]any{
 		"ok":    false,
 		"error": err.Error(),
 	}
 }
 
-func jsLoad(this js.Value, args []js.Value) any {
+func jsLoad(_ js.Value, args []js.Value) any {
 	src := args[0]
 	data := make([]byte, src.Length())
 	js.CopyBytesToGo(data, src)
@@ -61,10 +69,11 @@ func jsLoad(this js.Value, args []js.Value) any {
 		return resultErr(err)
 	}
 	current = g
+
 	return resultOK(g)
 }
 
-func jsTrim(this js.Value, args []js.Value) any {
+func jsTrim(_ js.Value, args []js.Value) any {
 	start := args[0].Int()
 	end := args[1].Int()
 	result, err := gif.Trim(current, start, end)
@@ -72,10 +81,11 @@ func jsTrim(this js.Value, args []js.Value) any {
 		return resultErr(err)
 	}
 	current = result
+
 	return resultOK(current)
 }
 
-func jsCrop(this js.Value, args []js.Value) any {
+func jsCrop(_ js.Value, args []js.Value) any {
 	x := args[0].Int()
 	y := args[1].Int()
 	width := args[2].Int()
@@ -85,20 +95,22 @@ func jsCrop(this js.Value, args []js.Value) any {
 		return resultErr(err)
 	}
 	current = result
+
 	return resultOK(current)
 }
 
-func jsSpeed(this js.Value, args []js.Value) any {
+func jsSpeed(_ js.Value, args []js.Value) any {
 	factor := args[0].Float()
 	result, err := gif.Speed(current, factor)
 	if err != nil {
 		return resultErr(err)
 	}
 	current = result
+
 	return resultOK(current)
 }
 
-func jsText(this js.Value, args []js.Value) any {
+func jsText(_ js.Value, args []js.Value) any {
 	text := args[0].String()
 	size := args[1].Float()
 	clr := gif.ParseColor(args[2].String())
@@ -117,13 +129,14 @@ func jsText(this js.Value, args []js.Value) any {
 		return resultErr(err)
 	}
 	current = result
+
 	return resultOK(current)
 }
 
-func jsEffect(this js.Value, args []js.Value) any {
+func jsEffect(_ js.Value, args []js.Value) any {
 	effectType := args[0].String()
 	var (
-		result *gif.GIFFile
+		result *stdgif.GIF
 		err    error
 	)
 	switch effectType {
@@ -132,16 +145,17 @@ func jsEffect(this js.Value, args []js.Value) any {
 	case "deepfry":
 		result, err = gif.DeepFry(current)
 	default:
-		return resultErr(fmt.Errorf("unknown effect: %s", effectType))
+		return resultErr(fmt.Errorf("%w: %s", ErrUnknownEffect, effectType))
 	}
 	if err != nil {
 		return resultErr(err)
 	}
 	current = result
+
 	return resultOK(current)
 }
 
-func jsResize(this js.Value, args []js.Value) any {
+func jsResize(_ js.Value, args []js.Value) any {
 	width := args[0].Int()
 	height := args[1].Int()
 	result, err := gif.Resize(current, width, height)
@@ -149,5 +163,6 @@ func jsResize(this js.Value, args []js.Value) any {
 		return resultErr(err)
 	}
 	current = result
+
 	return resultOK(current)
 }

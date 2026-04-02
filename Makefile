@@ -1,4 +1,4 @@
-.PHONY: all build-wasm wasm-exec web dev clean
+.PHONY: all build-wasm wasm-exec web dev clean fmt lint
 
 S3_FRONTEND_BUCKET ?= gifree.cc
 
@@ -23,6 +23,17 @@ dev: build-wasm wasm-exec
 # Deploy frontend to S3
 deploy: web
 	aws s3 sync web/dist/ s3://$(S3_FRONTEND_BUCKET)/ --delete
+
+# Format all Go code
+fmt:
+	golangci-lint fmt
+	golines --max-len=100 -w .
+
+# Lint all Go code
+lint:
+	golangci-lint cache clean
+	golangci-lint run ./gif/...
+	GOOS=js GOARCH=wasm golangci-lint run ./cmd/wasm/...
 
 clean:
 	rm -f web/public/gifree.wasm web/public/wasm_exec.js

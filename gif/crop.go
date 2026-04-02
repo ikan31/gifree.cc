@@ -1,32 +1,58 @@
 package gif
 
 import (
-	"fmt"
 	"image"
-	"image/draw"
+	gifstd "image/gif"
+
+	"golang.org/x/image/draw"
 )
 
+// CropOptions defines the region to crop, in pixels relative to the top-left of the GIF.
 type CropOptions struct {
 	X, Y, Width, Height int
 }
 
-func Crop(g *GIFFile, opts CropOptions) (*GIFFile, error) {
-	if opts.Width <= 0 || opts.Height <= 0 {
-		return nil, fmt.Errorf("crop dimensions must be positive")
+// Crop returns a new GIFFile where every frame is only selected portion.
+func Crop(gif *gifstd.GIF, cropOptions CropOptions) (*gifstd.GIF, error) {
+	if cropOptions.Width <= 0 || cropOptions.Height <= 0 {
+		return nil, ErrCropDimensions
 	}
-	b := g.Frames[0].Bounds()
-	if opts.X < 0 || opts.Y < 0 || opts.X+opts.Width > b.Max.X || opts.Y+opts.Height > b.Max.Y {
-		return nil, fmt.Errorf("crop rect out of bounds")
+
+	bounds := gif.Image[0].Bounds()
+
+	if cropOptions.X < 0 || cropOptions.Y < 0 || cropOptions.X+cropOptions.Width > bounds.Max.X ||
+		cropOptions.Y+cropOptions.Height > bounds.Max.Y {
+		return nil, ErrCropOutOfBounds
 	}
-	srcRect := image.Rect(opts.X, opts.Y, opts.X+opts.Width, opts.Y+opts.Height)
-	dstRect := image.Rect(0, 0, opts.Width, opts.Height)
-	newFrames := make([]*image.Paletted, len(g.Frames))
-	for i, frame := range g.Frames {
-		dst := image.NewPaletted(dstRect, frame.Palette)
-		draw.Draw(dst, dstRect, frame.SubImage(srcRect), srcRect.Min, draw.Src)
-		newFrames[i] = dst
+
+	// The region to cut out in the original GIFs coordinate space (aka the crop)
+	sourceRectangle := image.Rect(
+		cropOptions.X,
+		cropOptions.Y,
+		cropOptions.X+cropOptions.Width,
+		cropOptions.Y+cropOptions.Height,
+	)
+
+	// The destination bounds for each new frame, always starting at (0,0)
+	newRectangle := image.Rect(0, 0, cropOptions.Width, cropOptions.Height)
+
+	newImages := make([]*image.Paletted, len(gif.Image))
+
+	for i, sourceImage := range gif.Image {
+		newImage := image.NewPaletted(newRectangle, sourceImage.Palette)
+		// Copy the cropped region from the source frame into the new zero-origin frame.
+		// sourceRectangle defines what to read from sourceImage; image.Point{} is the
+		// destination origin.
+		draw.Copy(newImage, image.Point{X: 0, Y: 0}, sourceImage, sourceRectangle, draw.Src, nil)
+		newImages[i] = newImage
 	}
-	delays := make([]int, len(g.Delays))
-	copy(delays, g.Delays)
-	return &GIFFile{Frames: newFrames, Delays: delays, LoopCount: g.LoopCount}, nil
+
+	return &gifstd.GIF{
+		Image:           newImages,
+		Delay:           gif.Delay,
+		LoopCount:       gif.LoopCount,
+		Disposal:        gif.Disposal,
+		Config:          gif.Config,
+		BackgroundIndex: gif.BackgroundIndex,
+	}, nil
 }

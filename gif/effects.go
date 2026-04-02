@@ -3,148 +3,203 @@ package gif
 import (
 	"image"
 	"image/color"
-	"image/draw"
+	gifstd "image/gif"
 	"math/rand"
+
+	"golang.org/x/image/draw"
 )
 
-// Grayscale converts every frame to grayscale using luminance weights.
-func Grayscale(g *GIFFile) (*GIFFile, error) {
-	// Build a proper 256-shade grayscale palette
-	grayPalette := make(color.Palette, 256)
-	for i := range grayPalette {
+// grayPalette is a 256-shade grayscale palette
+var grayPalette = func() color.Palette { //nolint: gochecknoglobals
+	p := make(color.Palette, 256)
+	for i := range p {
 		v := uint8(i)
-		grayPalette[i] = color.RGBA{R: v, G: v, B: v, A: 255}
+		p[i] = color.RGBA{R: v, G: v, B: v, A: 255}
 	}
 
-	newFrames := make([]*image.Paletted, len(g.Frames))
-	for i, frame := range g.Frames {
-		b := frame.Bounds()
-		rgba := image.NewRGBA(b)
-		draw.Draw(rgba, b, frame, b.Min, draw.Src)
+	return p
+}()
 
-		for y := b.Min.Y; y < b.Max.Y; y++ {
-			for x := b.Min.X; x < b.Max.X; x++ {
+// Grayscale converts every image to grayscale using luminance weights.
+func Grayscale(gif *gifstd.GIF) (*gifstd.GIF, error) {
+	newImages := make([]*image.Paletted, len(gif.Image))
+
+	for i, sourceImage := range gif.Image {
+		// Get the bounds of the image
+		bounds := sourceImage.Bounds()
+
+		// RGBA Image so we can do per pixel math
+		rgba := image.NewRGBA(bounds)
+
+		// Draw pixels to RGBA Image
+		draw.Draw(rgba, bounds, sourceImage, bounds.Min, draw.Src)
+
+		// For each Pixel - do adjustments
+		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+			for x := bounds.Min.X; x < bounds.Max.X; x++ {
 				r, gv, bl, a := rgba.At(x, y).RGBA()
 				lum := uint8((0.299*float64(r) + 0.587*float64(gv) + 0.114*float64(bl)) / 257)
-				rgba.SetRGBA(x, y, color.RGBA{R: lum, G: lum, B: lum, A: uint8(a >> 8)})
+				rgba.SetRGBA(
+					x,
+					y,
+					color.RGBA{R: lum, G: lum, B: lum, A: uint8(a >> 8)},
+				) //nolint:gosec
 			}
 		}
 
-		dst := image.NewPaletted(b, grayPalette)
-		draw.FloydSteinberg.Draw(dst, b, rgba, b.Min)
-		newFrames[i] = dst
+		// Create new Paletted Image
+		finalImage := image.NewPaletted(bounds, grayPalette)
+
+		// Draw to Paletted Image - each RGBA pixel is covenverted to nearest grayscale value
+		draw.FloydSteinberg.Draw(finalImage, bounds, rgba, bounds.Min)
+
+		newImages[i] = finalImage
 	}
 
-	delays := make([]int, len(g.Delays))
-	copy(delays, g.Delays)
-	return &GIFFile{Frames: newFrames, Delays: delays, LoopCount: g.LoopCount}, nil
+	return &gifstd.GIF{
+		Image:           newImages,
+		Delay:           gif.Delay,
+		LoopCount:       gif.LoopCount,
+		Disposal:        gif.Disposal,
+		Config:          gif.Config,
+		BackgroundIndex: gif.BackgroundIndex,
+	}, nil
 }
 
 // DeepFry applies an extreme saturation + contrast boost, warm tint, noise, and
 // heavy sharpening to produce the classic "deep fried" meme look.
-func DeepFry(g *GIFFile) (*GIFFile, error) {
-	newFrames := make([]*image.Paletted, len(g.Frames))
-	for i, frame := range g.Frames {
-		b := frame.Bounds()
-		rgba := image.NewRGBA(b)
-		draw.Draw(rgba, b, frame, b.Min, draw.Src)
+func DeepFry(gif *gifstd.GIF) (*gifstd.GIF, error) {
+	newImages := make([]*image.Paletted, len(gif.Image))
+
+	for i, sourceImage := range gif.Image {
+		// Get the bounds of the image
+		bounds := sourceImage.Bounds()
+
+		// RGBA Image so we can do per pixel math
+		rgbaImage := image.NewRGBA(bounds)
+
+		// Draw pixels to RGBA Image
+		draw.Draw(rgbaImage, bounds, sourceImage, bounds.Min, draw.Src)
 
 		// Pass 1: saturation boost + contrast crush + warm tint + noise
-		for y := b.Min.Y; y < b.Max.Y; y++ {
-			for x := b.Min.X; x < b.Max.X; x++ {
-				r32, g32, bl32, a32 := rgba.At(x, y).RGBA()
+		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+			for x := bounds.Min.X; x < bounds.Max.X; x++ {
+				r32, g32, bl32, a32 := rgbaImage.At(x, y).RGBA()
 				r := float64(r32 >> 8)
 				gv := float64(g32 >> 8)
 				bl := float64(bl32 >> 8)
 
-				// Saturation boost
-				lum := 0.299*r + 0.587*gv + 0.114*bl
-				r = lum + (r-lum)*4.0
-				gv = lum + (gv-lum)*4.0
-				bl = lum + (bl-lum)*4.0
+				r, gv, bl = applySaturationBoost(r, gv, bl)
+				r, gv, bl = applyWarmTint(r, gv, bl)
+				r, gv, bl = applyContrastCrush(r, gv, bl)
+				r, gv, bl = applyNoise(r, gv, bl)
 
-				// Warm tint (red/orange push)
-				r *= 1.15
-				gv *= 1.0
-				bl *= 0.75
-
-				// Contrast crush
-				r = (r/255.0-0.5)*3.0*255 + 128
-				gv = (gv/255.0-0.5)*3.0*255 + 128
-				bl = (bl/255.0-0.5)*3.0*255 + 128
-
-				// Noise
-				noise := (rand.Float64() - 0.5) * 40
-				r += noise
-				gv += noise * 0.7
-				bl += noise * 0.5
-
-				rgba.SetRGBA(x, y, color.RGBA{
+				rgbaImage.SetRGBA(x, y, color.RGBA{
 					R: clampU8(r),
 					G: clampU8(gv),
 					B: clampU8(bl),
-					A: uint8(a32 >> 8),
+					A: uint8(a32 >> 8), //nolint:gosec
 				})
 			}
 		}
 
 		// Pass 2: heavy sharpening
-		sharpened := sharpenRGBA(rgba, b)
+		editedImage := sharpenRGBA(rgbaImage, bounds)
 
-		dst := image.NewPaletted(b, frame.Palette)
-		draw.FloydSteinberg.Draw(dst, b, sharpened, b.Min)
-		newFrames[i] = dst
+		// Create new Palette Image
+		finalImage := image.NewPaletted(bounds, sourceImage.Palette)
+
+		// Draw to final image - each pixel is drawn to Palette
+		draw.FloydSteinberg.Draw(finalImage, bounds, editedImage, bounds.Min)
+
+		newImages[i] = finalImage
 	}
 
-	delays := make([]int, len(g.Delays))
-	copy(delays, g.Delays)
-	return &GIFFile{Frames: newFrames, Delays: delays, LoopCount: g.LoopCount}, nil
+	return &gifstd.GIF{
+		Image:           newImages,
+		Delay:           gif.Delay,
+		LoopCount:       gif.LoopCount,
+		Disposal:        gif.Disposal,
+		Config:          gif.Config,
+		BackgroundIndex: gif.BackgroundIndex,
+	}, nil
 }
 
 // sharpenRGBA applies a strong 3×3 sharpening kernel.
-func sharpenRGBA(src *image.RGBA, b image.Rectangle) *image.RGBA {
-	dst := image.NewRGBA(b)
+func sharpenRGBA(sourceImage *image.RGBA, bounds image.Rectangle) *image.RGBA {
+	dst := image.NewRGBA(bounds)
 	kernel := [3][3]float64{
 		{-1, -1, -1},
 		{-1, 9, -1},
 		{-1, -1, -1},
 	}
-	for y := b.Min.Y; y < b.Max.Y; y++ {
-		for x := b.Min.X; x < b.Max.X; x++ {
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			var r, gv, bl float64
-			for ky := 0; ky < 3; ky++ {
-				for kx := 0; kx < 3; kx++ {
+			for ky := range 3 {
+				for kx := range 3 {
 					px := x + kx - 1
 					py := y + ky - 1
-					if px < b.Min.X {
-						px = b.Min.X
+					if px < bounds.Min.X {
+						px = bounds.Min.X
 					}
-					if px >= b.Max.X {
-						px = b.Max.X - 1
+					if px >= bounds.Max.X {
+						px = bounds.Max.X - 1
 					}
-					if py < b.Min.Y {
-						py = b.Min.Y
+					if py < bounds.Min.Y {
+						py = bounds.Min.Y
 					}
-					if py >= b.Max.Y {
-						py = b.Max.Y - 1
+					if py >= bounds.Max.Y {
+						py = bounds.Max.Y - 1
 					}
-					r32, g32, bl32, _ := src.At(px, py).RGBA()
+					r32, g32, bl32, _ := sourceImage.At(px, py).RGBA()
 					w := kernel[ky][kx]
 					r += float64(r32>>8) * w
 					gv += float64(g32>>8) * w
 					bl += float64(bl32>>8) * w
 				}
 			}
-			_, _, _, a32 := src.At(x, y).RGBA()
+			_, _, _, a32 := sourceImage.At(x, y).RGBA()
 			dst.SetRGBA(x, y, color.RGBA{
 				R: clampU8(r),
 				G: clampU8(gv),
 				B: clampU8(bl),
-				A: uint8(a32 >> 8),
+				A: uint8(a32 >> 8), //nolint:gosec
 			})
 		}
 	}
+
 	return dst
+}
+
+// applySaturationBoost pushes each channel away from the luminance value by a
+// factor of 4, making colors appear more vivid.
+func applySaturationBoost(r, g, b float64) (float64, float64, float64) {
+	lum := 0.299*r + 0.587*g + 0.114*b
+
+	return lum + (r-lum)*4.0, lum + (g-lum)*4.0, lum + (b-lum)*4.0
+}
+
+// applyWarmTint boosts red and suppresses blue to give the image a warm
+// orange cast.
+func applyWarmTint(r, g, b float64) (float64, float64, float64) {
+	return r * 1.15, g * 1.0, b * 0.75
+}
+
+// applyContrastCrush stretches contrast by scaling each channel around the
+// midpoint (128), clipping shadows and highlights toward the extremes.
+func applyContrastCrush(r, g, b float64) (float64, float64, float64) {
+	crush := func(v float64) float64 { return (v/255.0-0.5)*3.0*255 + 128 }
+
+	return crush(r), crush(g), crush(b)
+}
+
+// applyNoise adds random per-pixel noise, with less intensity applied to green
+// and blue to keep the warm tint dominant.
+func applyNoise(r, g, b float64) (float64, float64, float64) {
+	noise := (rand.Float64() - 0.5) * 40 //nolint:gosec
+
+	return r + noise, g + noise*0.7, b + noise*0.5
 }
 
 func clampU8(v float64) uint8 {
@@ -154,5 +209,6 @@ func clampU8(v float64) uint8 {
 	if v > 255 {
 		return 255
 	}
+
 	return uint8(v)
 }
