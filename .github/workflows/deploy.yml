@@ -36,4 +36,6 @@ jobs:
           aws-region: us-east-1
 
       - name: Deploy to S3
-        run: aws s3 sync web/dist/ s3://gifree.cc/ --delete
+        run: |
+          aws s3 sync web/dist/ s3://gifree.cc/ --delete --exclude "*.wasm"
+          aws s3 sync web/dist/ s3://gifree.cc/ --exclude "*" --include "*.wasm" --cache-control "no-cache, no-store, must-revalidate"
