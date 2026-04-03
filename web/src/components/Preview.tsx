@@ -25,7 +25,7 @@ export default function Preview({ src, frames, width, height, size }: Props) {
           {[
             width != null && height != null ? `${width}×${height}` : null,
             frames != null ? `${frames} frames` : null,
-            size != null ? fmtSize(size) : null,
+            size != null ? `~${fmtSize(size)}` : null,
           ].filter(Boolean).join(' · ')}
         </p>
       )}

@@ -34,13 +34,13 @@ export default function Dropzone({ onFile, loading }: Props) {
     >
       <Upload className="w-10 h-10 text-gray-500 mb-3" />
       <p className="text-gray-400 text-sm">
-        {loading ? 'Loading…' : 'Drop a GIF here, or click to browse'}
+        {loading ? 'Loading…' : 'Drop a file here, or click to browse'}
       </p>
-      <p className="text-gray-600 text-xs mt-1">.gif only · larger files take longer to process</p>
+      <p className="text-gray-600 text-xs mt-1">.gif · .mp4 · .webm · .mov</p>
       <input
         ref={inputRef}
         type="file"
-        accept=".gif"
+        accept=".gif,.mp4,.webm,.mov,video/mp4,video/webm,video/quicktime"
         className="hidden"
         onChange={handleChange}
       />

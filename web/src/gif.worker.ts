@@ -52,6 +52,8 @@ self.onmessage = async (e) => {
       result = (self as any).gifEffect(args.type)
     } else if (op === 'resize') {
       result = (self as any).gifResize(args.width, args.height)
+    } else if (op === 'fromFrames') {
+      result = (self as any).gifFromFrames(args.flat, args.width, args.height, args.frameCount, args.fps)
     } else if (op === 'restoreId') {
       // Restore WASM state from a previously stored blob (for undo)
       const stored = blobs.get(args.id)

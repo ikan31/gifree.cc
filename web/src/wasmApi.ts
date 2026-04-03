@@ -69,6 +69,94 @@ export async function restoreId(id: string): Promise<OpResult> {
   return call('restoreId', { id })
 }
 
+// Returns the duration of a video file in seconds.
+export function getVideoDuration(file: File): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video')
+    const url = URL.createObjectURL(file)
+    video.src = url
+    video.preload = 'metadata'
+    video.addEventListener('loadedmetadata', () => {
+      URL.revokeObjectURL(url)
+      resolve(video.duration)
+    })
+    video.addEventListener('error', () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('Failed to load video metadata'))
+    })
+  })
+}
+
+function seekTo(video: HTMLVideoElement, time: number): Promise<void> {
+  return new Promise((resolve) => {
+    video.currentTime = time
+    video.addEventListener('seeked', () => resolve(), { once: true })
+  })
+}
+
+async function extractMP4Frames(
+  file: File,
+  fps: number,
+  startSec: number,
+  endSec: number,
+): Promise<{ flat: Uint8Array; width: number; height: number; frameCount: number }> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video')
+    const url = URL.createObjectURL(file)
+    video.src = url
+    video.muted = true
+    video.preload = 'auto'
+
+    video.addEventListener('loadedmetadata', async () => {
+      try {
+        const { videoWidth: width, videoHeight: height } = video
+        if (width === 0 || height === 0) {
+          URL.revokeObjectURL(url)
+          reject(new Error('Could not read video dimensions — the file may be corrupt or use an unsupported codec'))
+          return
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')!
+
+        const times: number[] = []
+        const interval = 1 / fps
+        for (let t = startSec; t < endSec; t += interval) {
+          times.push(t)
+        }
+
+        const frameSize = width * height * 4
+        const flat = new Uint8Array(times.length * frameSize)
+
+        for (let i = 0; i < times.length; i++) {
+          await seekTo(video, times[i])
+          ctx.drawImage(video, 0, 0)
+          const imageData = ctx.getImageData(0, 0, width, height)
+          flat.set(imageData.data, i * frameSize)
+        }
+
+        URL.revokeObjectURL(url)
+        resolve({ flat, width, height, frameCount: times.length })
+      } catch (e) {
+        URL.revokeObjectURL(url)
+        reject(e)
+      }
+    })
+
+    video.addEventListener('error', () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('Failed to load video'))
+    })
+  })
+}
+
+export async function loadMP4(file: File, fps: number, startSec: number, endSec: number): Promise<OpResult> {
+  if (fps < 1 || fps > 60) throw new Error('frame rate must be between 1 and 60')
+  const { flat, width, height, frameCount } = await extractMP4Frames(file, fps, startSec, endSec)
+  return call('fromFrames', { flat, width, height, frameCount, fps }, [flat.buffer])
+}
+
 // Returns a blob: URL for the given id (preview or download)
 export async function blobUrl(id: string): Promise<string> {
   const res = await call('getBytes', { id })

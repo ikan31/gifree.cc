@@ -14,4 +14,6 @@ var (
 	ErrSpeedFactor       = errors.New("speed factor must be positive")
 	ErrLoadFont          = errors.New("failed to load font")
 	ErrInvalidFrameRange = errors.New("invalid frame range")
+	ErrNoVideoFrames     = errors.New("no frames extracted from video")
+	ErrInvalidFPS        = errors.New("frame rate must be between 1 and 60")
 )

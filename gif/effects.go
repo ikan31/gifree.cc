@@ -42,8 +42,8 @@ func Grayscale(gif *gifstd.GIF) (*gifstd.GIF, error) {
 				rgba.SetRGBA(
 					x,
 					y,
-					color.RGBA{R: lum, G: lum, B: lum, A: uint8(a >> 8)},
-				) //nolint:gosec
+					color.RGBA{R: lum, G: lum, B: lum, A: uint8(a >> 8)}, //nolint:gosec
+				)
 			}
 		}
 

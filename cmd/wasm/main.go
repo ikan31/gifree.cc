@@ -26,6 +26,7 @@ func main() {
 	js.Global().Set("gifText", js.FuncOf(jsText))
 	js.Global().Set("gifEffect", js.FuncOf(jsEffect))
 	js.Global().Set("gifResize", js.FuncOf(jsResize))
+	js.Global().Set("gifFromFrames", js.FuncOf(jsFromFrames))
 	js.Global().Call("gifWASMReady")
 	select {}
 }
@@ -153,6 +154,32 @@ func jsEffect(_ js.Value, args []js.Value) any {
 	current = result
 
 	return resultOK(current)
+}
+
+func jsFromFrames(_ js.Value, args []js.Value) any {
+	flatJS := args[0]
+	width := args[1].Int()
+	height := args[2].Int()
+	frameCount := args[3].Int()
+	fps := args[4].Int()
+
+	flat := make([]byte, flatJS.Length())
+	js.CopyBytesToGo(flat, flatJS)
+
+	frameSize := width * height * 4
+	frames := make([][]byte, frameCount)
+	for i := range frameCount {
+		start := i * frameSize
+		frames[i] = flat[start : start+frameSize]
+	}
+
+	g, err := gif.FramesToGIF(frames, width, height, fps)
+	if err != nil {
+		return resultErr(err)
+	}
+	current = g
+
+	return resultOK(g)
 }
 
 func jsResize(_ js.Value, args []js.Value) any {

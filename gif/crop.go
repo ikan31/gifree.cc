@@ -43,7 +43,7 @@ func Crop(gif *gifstd.GIF, cropOptions CropOptions) (*gifstd.GIF, error) {
 		// Copy the cropped region from the source frame into the new zero-origin frame.
 		// sourceRectangle defines what to read from sourceImage; image.Point{} is the
 		// destination origin.
-		draw.Copy(newImage, image.Point{}, sourceImage, sourceRectangle, draw.Src, nil)
+		draw.Copy(newImage, image.Point{X: 0, Y: 0}, sourceImage, sourceRectangle, draw.Src, nil)
 		newImages[i] = newImage
 	}
 
