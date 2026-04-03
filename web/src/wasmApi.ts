@@ -118,7 +118,7 @@ async function extractMP4Frames(
         const canvas = document.createElement('canvas')
         canvas.width = width
         canvas.height = height
-        const ctx = canvas.getContext('2d')!
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })!
 
         const times: number[] = []
         const interval = 1 / fps
