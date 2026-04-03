@@ -50,6 +50,7 @@ export default function App() {
   const [textConfig, setTextConfig] = useState<TextConfig>({ text: '', color: 'white', font: 'regular' })
   const [textPos, setTextPos] = useState<{ x: number; y: number; size: number } | null>(null)
   const imgRef = useRef<HTMLImageElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   // Revoke old blob URLs when they're no longer needed
   const prevSrcsRef = useRef<Set<string>>(new Set())
@@ -186,6 +187,33 @@ export default function App() {
 
   const effectiveFps = mp4FpsCustom ? (parseInt(mp4FpsRaw) || 0) : mp4Fps
 
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || !mp4Pending) return
+
+    const onTimeUpdate = () => {
+      if (video.currentTime >= mp4End) video.currentTime = mp4Start
+    }
+    const onEnded = () => {
+      video.currentTime = mp4Start
+      video.play()
+    }
+
+    video.addEventListener('timeupdate', onTimeUpdate)
+    video.addEventListener('ended', onEnded)
+    return () => {
+      video.removeEventListener('timeupdate', onTimeUpdate)
+      video.removeEventListener('ended', onEnded)
+    }
+  }, [mp4Start, mp4End, mp4Pending])
+
+  function handleRangeCommit(start: number, end: number) {
+    const video = videoRef.current
+    if (!video) return
+    video.currentTime = start
+    video.play()
+  }
+
   const opNames = history.map((h) => h.opName)
   const speedApplied = opNames.some((n) => n.includes('Speed'))
   const showCropOverlay = activeTab === 'crop' && working?.meta.type === 'gif'
@@ -219,10 +247,10 @@ export default function App() {
         ) : !working && mp4Pending ? (
           <div className="space-y-4">
             <video
+              ref={videoRef}
               src={mp4Pending.previewUrl}
               className="w-full max-h-60 sm:max-h-96 rounded-lg border border-gray-800 object-contain bg-black"
               autoPlay
-              loop
               muted
             />
 
@@ -239,6 +267,7 @@ export default function App() {
                   start={mp4Start}
                   end={mp4End}
                   onChange={(s, e) => { setMp4Start(s); setMp4End(e) }}
+                  onCommit={handleRangeCommit}
                 />
               </div>
 
@@ -366,8 +395,8 @@ export default function App() {
               )}
 
               <Toolbar
-                key={working.id}
-                meta={working.meta}
+                key={working!.id}
+                meta={working!.meta}
                 activeTab={activeTab}
                 onTabChange={handleTabChange}
                 cropSelection={cropBox}
@@ -382,7 +411,7 @@ export default function App() {
               />
 
               <ExportBar
-                downloadHref={working.src}
+                downloadHref={working!.src}
                 onReset={reset}
                 onResetEdits={history.length > 0 ? resetEdits : undefined}
                 onUndo={history.length > 0 ? undo : undefined}
@@ -412,11 +441,13 @@ function VideoRangeSlider({
   start,
   end,
   onChange,
+  onCommit,
 }: {
   duration: number
   start: number
   end: number
   onChange: (start: number, end: number) => void
+  onCommit?: (start: number, end: number) => void
 }) {
   const step = 0.1
   const leftPct = (start / duration) * 100
@@ -454,6 +485,7 @@ function VideoRangeSlider({
           step={step}
           value={start}
           onChange={(e) => onChange(Math.min(parseFloat(e.target.value), end - step), end)}
+          onPointerUp={() => onCommit?.(start, end)}
           className={inputCls}
           style={{ zIndex: startOnTop ? 5 : 3 }}
         />
@@ -464,6 +496,7 @@ function VideoRangeSlider({
           step={step}
           value={end}
           onChange={(e) => onChange(start, Math.max(parseFloat(e.target.value), start + step))}
+          onPointerUp={() => onCommit?.(start, end)}
           className={inputCls}
           style={{ zIndex: startOnTop ? 3 : 5 }}
         />
