@@ -24,6 +24,7 @@ let resolveReady!: () => void
 const readyPromise = new Promise<void>((r) => { resolveReady = r })
 
 ;(self as any).gifWASMReady = () => {
+  console.log('[gifree] WASM ready')
   resolveReady()
 }
 
@@ -37,6 +38,7 @@ self.onmessage = async (e) => {
 
   try {
     let result: any
+    const t0 = performance.now()
 
     if (op === 'load') {
       result = (self as any).gifLoad(args.bytes)
@@ -69,17 +71,44 @@ self.onmessage = async (e) => {
       throw new Error(`unknown op: ${op}`)
     }
 
-    if (!result.ok) throw new Error(result.error)
+    const elapsed = (performance.now() - t0).toFixed(0)
+
+    if (!result.ok) {
+      console.error(`[gifree] op=${op} error="${result.error}"`, opLogArgs(op, args))
+      throw new Error(result.error)
+    }
 
     // Store a copy before transferring the buffer
     const id = newId()
     blobs.set(id, new Uint8Array(result.bytes))
+
+    console.log(`[gifree] op=${op} ${elapsed}ms → ${result.frames ?? '?'} frames ${result.width ?? '?'}×${result.height ?? '?'} ~${fmtSize(result.size)}`, opLogArgs(op, args))
 
     self.postMessage(
       { msgId, ok: true, id, meta: { type: 'gif', frames: result.frames, width: result.width, height: result.height, size: result.size } },
       [result.bytes.buffer] as any,
     )
   } catch (err: any) {
+    console.error(`[gifree] op=${op} threw:`, err?.message ?? String(err))
     self.postMessage({ msgId, ok: false, error: err?.message ?? String(err) })
   }
+}
+
+function opLogArgs(op: string, args: Record<string, any>): Record<string, any> {
+  switch (op) {
+    case 'load': return { size: args.bytes?.length }
+    case 'trim': return { start: args.start, end: args.end }
+    case 'crop': return { x: args.x, y: args.y, width: args.width, height: args.height }
+    case 'speed': return { factor: args.factor }
+    case 'text': return { text: args.text, size: args.size, color: args.color, font: args.font, x: args.x, y: args.y }
+    case 'effect': return { type: args.type }
+    case 'resize': return { width: args.width, height: args.height }
+    case 'fromFrames': return { frameCount: args.frameCount, width: args.width, height: args.height, fps: args.fps }
+    default: return {}
+  }
+}
+
+function fmtSize(bytes: number): string {
+  if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
+  return (bytes / 1024).toFixed(1) + ' KB'
 }

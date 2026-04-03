@@ -12,6 +12,7 @@ A simple and local GIF editor that runs entirely in your browser. No uploads, no
 
 ## Features
 
+- **Video to GIF** — convert videos to GIF with clip range and fps controls
 - **Trim** — cut to any frame range
 - **Crop** — drag to select a region
 - **Text** — overlay text with font, size, and color options
@@ -23,6 +24,8 @@ A simple and local GIF editor that runs entirely in your browser. No uploads, no
 ## How it works
 
 gifree compiles the GIF processing library to [WebAssembly](https://webassembly.org/) using Go's built-in WASM target. When you open the site, the browser downloads a ~4MB `.wasm` binary once. After that, every edit runs locally on your machine.
+
+Video conversion uses the browser's native `<video>` + `<canvas>` APIs to extract frames — no ffmpeg, no server, no extra binary size. Go receives raw RGBA frames and builds the GIF.
 
 ```
 Your browser
@@ -68,10 +71,13 @@ PRs are welcome. A few things to know:
 
 To add a new operation:
 1. Implement it in `gif/` as a function `Foo(g *GIFFile, ...) (*GIFFile, error)`
-2. Register it in `cmd/wasm/main.go` as a JS global (`gifFoo`)
-3. Add it to the worker dispatch in `gif.worker.ts`
-4. Expose it via `wasmApi.ts`
-5. Add a tab in `Toolbar.tsx`
+2. Add any new sentinel errors to `gif/errors.go`
+3. Register it in `cmd/wasm/main.go` as a JS global (`gifFoo`)
+4. Add it to the worker dispatch in `gif.worker.ts`
+5. Expose it via `wasmApi.ts`
+6. Add a tab in `Toolbar.tsx`
+
+**Debugging:** All ops are logged to the browser console with a `[gifree]` prefix — useful for bug reports. Open DevTools → Console before reproducing an issue and paste the output.
 
 ## License
 
