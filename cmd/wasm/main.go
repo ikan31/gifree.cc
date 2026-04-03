@@ -14,8 +14,9 @@ import (
 )
 
 var (
-	current          *stdgif.GIF //nolint:gochecknoglobals // holds WASM working state between JS calls
-	ErrUnknownEffect = errors.New("unknown effect")
+	current             *stdgif.GIF //nolint:gochecknoglobals // holds WASM working state between JS calls
+	ErrUnknownEffect    = errors.New("unknown effect")
+	ErrUnknownTransform = errors.New("unknown transform type")
 )
 
 func main() {
@@ -27,6 +28,8 @@ func main() {
 	js.Global().Set("gifEffect", js.FuncOf(jsEffect))
 	js.Global().Set("gifResize", js.FuncOf(jsResize))
 	js.Global().Set("gifFromFrames", js.FuncOf(jsFromFrames))
+	js.Global().Set("gifReverse", js.FuncOf(jsReverse))
+	js.Global().Set("gifTransform", js.FuncOf(jsTransform))
 	js.Global().Call("gifWASMReady")
 	select {}
 }
@@ -180,6 +183,44 @@ func jsFromFrames(_ js.Value, args []js.Value) any {
 	current = g
 
 	return resultOK(g)
+}
+
+func jsReverse(_ js.Value, _ []js.Value) any {
+	result, err := gif.Reverse(current)
+	if err != nil {
+		return resultErr(err)
+	}
+	current = result
+
+	return resultOK(current)
+}
+
+func jsTransform(_ js.Value, args []js.Value) any {
+	transformType := args[0].String()
+	var (
+		result *stdgif.GIF
+		err    error
+	)
+	switch transformType {
+	case "fliph":
+		result, err = gif.FlipH(current)
+	case "flipv":
+		result, err = gif.FlipV(current)
+	case "rotate90cw":
+		result, err = gif.Rotate90CW(current)
+	case "rotate90ccw":
+		result, err = gif.Rotate90CCW(current)
+	case "rotate180":
+		result, err = gif.Rotate180(current)
+	default:
+		return resultErr(fmt.Errorf("%w: %s", ErrUnknownTransform, transformType))
+	}
+	if err != nil {
+		return resultErr(err)
+	}
+	current = result
+
+	return resultOK(current)
 }
 
 func jsResize(_ js.Value, args []js.Value) any {

@@ -12,13 +12,14 @@ A simple and local GIF editor that runs entirely in your browser. No uploads, no
 
 ## Features
 
-- **Video to GIF** — convert videos to GIF with clip range and fps controls
+- **Video to GIF** — convert video to GIF with clip range and fps controls
 - **Trim** — cut to any frame range
 - **Crop** — drag to select a region
-- **Text** — overlay text with font, size, and color options
-- **Speed** — slow down or speed up (0.25× – 4×)
-- **Effects** — grayscale or deep fry
 - **Resize** — scale to preset widths or custom dimensions
+- **Speed** — slow down or speed up (0.25× – 4×)
+- **Transform** — flip horizontally/vertically, rotate 90°/180°, reverse
+- **Effects** — grayscale or deep fry
+- **Text** — overlay text with font, size, and color options
 - **Undo** — step back through edits
 
 ## How it works

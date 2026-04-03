@@ -56,6 +56,10 @@ self.onmessage = async (e) => {
       result = (self as any).gifResize(args.width, args.height)
     } else if (op === 'fromFrames') {
       result = (self as any).gifFromFrames(args.flat, args.width, args.height, args.frameCount, args.fps)
+    } else if (op === 'reverse') {
+      result = (self as any).gifReverse()
+    } else if (op === 'transform') {
+      result = (self as any).gifTransform(args.type)
     } else if (op === 'restoreId') {
       // Restore WASM state from a previously stored blob (for undo)
       const stored = blobs.get(args.id)
@@ -104,6 +108,8 @@ function opLogArgs(op: string, args: Record<string, any>): Record<string, any> {
     case 'effect': return { type: args.type }
     case 'resize': return { width: args.width, height: args.height }
     case 'fromFrames': return { frameCount: args.frameCount, width: args.width, height: args.height, fps: args.fps }
+    case 'transform': return { type: args.type }
+    case 'reverse': return {}
     default: return {}
   }
 }

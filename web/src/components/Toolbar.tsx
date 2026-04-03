@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { FileMeta, trim, addText, crop, speed, applyEffect, resize, OpResult } from '../wasmApi'
+import { FileMeta, trim, addText, crop, speed, applyEffect, resize, reverse, applyTransform, TransformType, OpResult } from '../wasmApi'
 import { CropBox } from './CropOverlay'
 
-export type Tab = 'trim' | 'text' | 'crop' | 'speed' | 'effects' | 'resize'
+export type Tab = 'trim' | 'text' | 'crop' | 'speed' | 'effects' | 'resize' | 'transform'
 
 export interface TextConfig {
   text: string
@@ -52,6 +52,9 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
   const [resizeWidth, setResizeWidth] = useState('')
   const [resizeHeight, setResizeHeight] = useState('')
 
+  // transform fields
+  const [selectedTransform, setSelectedTransform] = useState<TransformType | 'reverse' | null>(null)
+
 
   async function run() {
     setBusy(true)
@@ -83,6 +86,13 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
         }
         result = await crop(cropSelection.x, cropSelection.y, cropSelection.width, cropSelection.height)
         opName = 'Crop'
+      } else if (activeTab === 'transform') {
+        if (!selectedTransform) {
+          onError('Select a transform first')
+          return
+        }
+        result = selectedTransform === 'reverse' ? await reverse() : await applyTransform(selectedTransform)
+        opName = TRANSFORM_OPTIONS.find((o) => o.type === selectedTransform)?.label ?? selectedTransform
       } else {
         if (!textConfig.text.trim()) {
           onError('Text cannot be empty')
@@ -103,6 +113,15 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
     }
   }
 
+  const TRANSFORM_OPTIONS: { type: TransformType | 'reverse'; label: string; desc: string }[] = [
+    { type: 'fliph',       label: 'Flip Horizontally', desc: 'Mirror the GIF left-to-right. Like holding it up to a mirror.' },
+    { type: 'flipv',       label: 'Flip Vertically',   desc: 'Mirror the GIF top-to-bottom. The top row becomes the bottom row.' },
+    { type: 'rotate90cw',  label: 'Rotate 90° CW',    desc: 'Rotate 90° clockwise. What was on the left is now on the top.' },
+    { type: 'rotate90ccw', label: 'Rotate 90° CCW',   desc: 'Rotate 90° counter-clockwise. What was on the right is now on the top.' },
+    { type: 'rotate180',   label: 'Rotate 180°',       desc: 'Flip both axes — same as flipping horizontally then vertically.' },
+    { type: 'reverse',     label: 'Reverse',            desc: 'Play the frames in reverse order.' },
+  ]
+
   const tabs: { id: Tab; label: string; disabled?: boolean }[] = [
     { id: 'trim', label: 'Trim' },
     { id: 'text', label: 'Text' },
@@ -110,6 +129,7 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
     { id: 'speed', label: 'Speed', disabled: speedApplied },
     { id: 'effects', label: 'Effects' },
     { id: 'resize', label: 'Resize' },
+    { id: 'transform', label: 'Transform' },
   ]
 
   return (
@@ -228,6 +248,37 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
         </div>
       )}
 
+      {/* Transform */}
+      {activeTab === 'transform' && (
+        <div className="space-y-3">
+          <div className="space-y-2">
+            {([
+              ['fliph', 'flipv'],
+              ['rotate90cw', 'rotate90ccw', 'rotate180'],
+              ['reverse'],
+            ] as const).map((row, i) => (
+              <div key={i} className="flex gap-2">
+                {row.map((type) => {
+                  const opt = TRANSFORM_OPTIONS.find((o) => o.type === type)!
+                  return (
+                    <button key={type} onClick={() => setSelectedTransform(type)}
+                      className={`w-36 py-2 rounded-lg text-sm font-medium transition-colors
+                        ${selectedTransform === type ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
+                      {opt.label}
+                    </button>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+          {selectedTransform && (
+            <p className="text-xs text-gray-400">
+              {TRANSFORM_OPTIONS.find((o) => o.type === selectedTransform)?.desc}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Resize */}
       {activeTab === 'resize' && (
         <div className="space-y-3">
@@ -278,7 +329,7 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
 
       <button
         onClick={run}
-        disabled={busy || (activeTab === 'speed' && speedApplied)}
+        disabled={busy || (activeTab === 'speed' && speedApplied) || (activeTab === 'transform' && !selectedTransform)}
         className="w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-colors"
       >
         {busy ? 'Processing…' : 'Apply'}

@@ -65,6 +65,16 @@ export async function resize(width: number, height: number): Promise<OpResult> {
   return call('resize', { width, height })
 }
 
+export async function reverse(): Promise<OpResult> {
+  return call('reverse', {})
+}
+
+export type TransformType = 'fliph' | 'flipv' | 'rotate90cw' | 'rotate90ccw' | 'rotate180'
+
+export async function applyTransform(type: TransformType): Promise<OpResult> {
+  return call('transform', { type })
+}
+
 // Restore WASM state from a previously stored blob (used for undo)
 export async function restoreId(id: string): Promise<OpResult> {
   return call('restoreId', { id })
