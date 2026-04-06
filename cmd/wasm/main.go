@@ -165,6 +165,7 @@ func jsFromFrames(_ js.Value, args []js.Value) any {
 	height := args[2].Int()
 	frameCount := args[3].Int()
 	fps := args[4].Int()
+	highQuality := args[5].Bool()
 
 	flat := make([]byte, flatJS.Length())
 	js.CopyBytesToGo(flat, flatJS)
@@ -176,7 +177,7 @@ func jsFromFrames(_ js.Value, args []js.Value) any {
 		frames[i] = flat[start : start+frameSize]
 	}
 
-	g, err := gif.FramesToGIF(frames, width, height, fps)
+	g, err := gif.FramesToGIF(frames, width, height, fps, highQuality)
 	if err != nil {
 		return resultErr(err)
 	}

@@ -44,6 +44,7 @@ export default function App() {
   const [mp4Fps, setMp4Fps] = useState(10)
   const [mp4FpsCustom, setMp4FpsCustom] = useState(false)
   const [mp4FpsRaw, setMp4FpsRaw] = useState('')
+  const [mp4HighQuality, setMp4HighQuality] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>('trim')
   const [cropBox, setCropBox] = useState<CropBox | null>(null)
   const [effectType, setEffectType] = useState<'grayscale' | 'deepfry'>('grayscale')
@@ -114,7 +115,7 @@ export default function App() {
     setError(null)
     setUploading(true)
     try {
-      const result = await loadMP4(mp4Pending.file, effectiveFps, mp4Start, mp4End)
+      const result = await loadMP4(mp4Pending.file, effectiveFps, mp4Start, mp4End, mp4HighQuality)
       const state = await makeFileState(result)
       setOriginal(state)
       setWorking(state)
@@ -298,6 +299,19 @@ export default function App() {
               <p className="text-xs text-gray-600">
                 ~{Math.max(0, Math.floor((mp4End - mp4Start) * effectiveFps))} frames
               </p>
+
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <div
+                  onClick={() => setMp4HighQuality(v => !v)}
+                  className={`relative w-9 h-5 rounded-full transition-colors ${mp4HighQuality ? 'bg-indigo-600' : 'bg-gray-700'}`}
+                >
+                  <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${mp4HighQuality ? 'translate-x-4' : ''}`} />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-300">Higher quality</p>
+                  <p className="text-xs text-gray-600">Slower — builds a custom color palette per frame</p>
+                </div>
+              </label>
 
               <div className="flex gap-3">
                 <button

@@ -19,6 +19,7 @@ func Reverse(g *gifstd.GIF) (*gifstd.GIF, error) {
 		newDelay[i] = g.Delay[n-1-i]
 		newDisposal[i] = g.Disposal[n-1-i]
 	}
+
 	return &gifstd.GIF{
 		Image:           newImages,
 		Delay:           newDelay,
@@ -55,7 +56,10 @@ func Rotate180(g *gifstd.GIF) (*gifstd.GIF, error) {
 }
 
 // applyToAllFrames applies fn to every frame and updates Config dimensions from the result.
-func applyToAllFrames(g *gifstd.GIF, fn func(*image.Paletted) *image.Paletted) (*gifstd.GIF, error) {
+func applyToAllFrames(
+	g *gifstd.GIF,
+	fn func(*image.Paletted) *image.Paletted,
+) (*gifstd.GIF, error) {
 	if len(g.Image) == 0 {
 		return nil, ErrNoFrames
 	}
@@ -67,6 +71,7 @@ func applyToAllFrames(g *gifstd.GIF, fn func(*image.Paletted) *image.Paletted) (
 	b := newImages[0].Bounds()
 	cfg.Width = b.Dx()
 	cfg.Height = b.Dy()
+
 	return &gifstd.GIF{
 		Image:           newImages,
 		Delay:           g.Delay,
@@ -86,6 +91,7 @@ func flipHFrame(src *image.Paletted) *image.Paletted {
 			dst.SetColorIndex(x, y, src.ColorIndexAt(b.Min.X+w-1-x, b.Min.Y+y))
 		}
 	}
+
 	return dst
 }
 
@@ -98,6 +104,7 @@ func flipVFrame(src *image.Paletted) *image.Paletted {
 			dst.SetColorIndex(x, y, src.ColorIndexAt(b.Min.X+x, b.Min.Y+h-1-y))
 		}
 	}
+
 	return dst
 }
 
@@ -112,6 +119,7 @@ func rotate90CWFrame(src *image.Paletted) *image.Paletted {
 			dst.SetColorIndex(nx, ny, src.ColorIndexAt(b.Min.X+ny, b.Min.Y+h-1-nx))
 		}
 	}
+
 	return dst
 }
 
@@ -126,6 +134,7 @@ func rotate90CCWFrame(src *image.Paletted) *image.Paletted {
 			dst.SetColorIndex(nx, ny, src.ColorIndexAt(b.Min.X+w-1-ny, b.Min.Y+nx))
 		}
 	}
+
 	return dst
 }
 
@@ -138,5 +147,6 @@ func rotate180Frame(src *image.Paletted) *image.Paletted {
 			dst.SetColorIndex(x, y, src.ColorIndexAt(b.Min.X+w-1-x, b.Min.Y+h-1-y))
 		}
 	}
+
 	return dst
 }

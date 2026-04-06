@@ -55,7 +55,7 @@ self.onmessage = async (e) => {
     } else if (op === 'resize') {
       result = (self as any).gifResize(args.width, args.height)
     } else if (op === 'fromFrames') {
-      result = (self as any).gifFromFrames(args.flat, args.width, args.height, args.frameCount, args.fps)
+      result = (self as any).gifFromFrames(args.flat, args.width, args.height, args.frameCount, args.fps, args.highQuality)
     } else if (op === 'reverse') {
       result = (self as any).gifReverse()
     } else if (op === 'transform') {
@@ -107,7 +107,7 @@ function opLogArgs(op: string, args: Record<string, any>): Record<string, any> {
     case 'text': return { text: args.text, size: args.size, color: args.color, font: args.font, x: args.x, y: args.y }
     case 'effect': return { type: args.type }
     case 'resize': return { width: args.width, height: args.height }
-    case 'fromFrames': return { frameCount: args.frameCount, width: args.width, height: args.height, fps: args.fps }
+    case 'fromFrames': return { frameCount: args.frameCount, width: args.width, height: args.height, fps: args.fps, highQuality: args.highQuality }
     case 'transform': return { type: args.type }
     case 'reverse': return {}
     default: return {}

@@ -166,14 +166,14 @@ async function extractMP4Frames(
   })
 }
 
-export async function loadMP4(file: File, fps: number, startSec: number, endSec: number): Promise<OpResult> {
+export async function loadMP4(file: File, fps: number, startSec: number, endSec: number, highQuality: boolean): Promise<OpResult> {
   if (fps < 1 || fps > 60) {
     console.error(`[gifree] loadMP4 error: frame rate must be between 1 and 60 (got ${fps})`)
     throw new Error('frame rate must be between 1 and 60')
   }
-  console.log(`[gifree] load video: name="${file.name}" size=${fmtSize(file.size)} type="${file.type}" fps=${fps} range=${startSec.toFixed(2)}s–${endSec.toFixed(2)}s`)
+  console.log(`[gifree] load video: name="${file.name}" size=${fmtSize(file.size)} type="${file.type}" fps=${fps} range=${startSec.toFixed(2)}s–${endSec.toFixed(2)}s highQuality=${highQuality}`)
   const { flat, width, height, frameCount } = await extractMP4Frames(file, fps, startSec, endSec)
-  return call('fromFrames', { flat, width, height, frameCount, fps }, [flat.buffer])
+  return call('fromFrames', { flat, width, height, frameCount, fps, highQuality }, [flat.buffer])
 }
 
 function fmtSize(bytes: number): string {

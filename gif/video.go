@@ -2,6 +2,7 @@ package gif
 
 import (
 	"image"
+	"image/color"
 	"image/color/palette"
 	gifstd "image/gif"
 
@@ -11,7 +12,9 @@ import (
 // FramesToGIF converts a sequence of raw RGBA frames into a GIF.
 // Each frame must be width*height*4 bytes in RGBA order.
 // fps must be between 1 and 60; the GIF frame delay is derived from it.
-func FramesToGIF(frames [][]byte, width, height, fps int) (*gifstd.GIF, error) {
+// If highQuality is true, each frame's palette is built using median cut
+// quantization instead of the fixed Plan9 palette.
+func FramesToGIF(frames [][]byte, width, height, fps int, highQuality bool) (*gifstd.GIF, error) {
 	if len(frames) == 0 {
 		return nil, ErrNoVideoFrames
 	}
@@ -31,7 +34,13 @@ func FramesToGIF(frames [][]byte, width, height, fps int) (*gifstd.GIF, error) {
 		rgba := image.NewRGBA(bounds)
 		copy(rgba.Pix, frameData)
 
-		dst := image.NewPaletted(bounds, palette.Plan9)
+		var pal color.Palette
+		if highQuality {
+			pal = medianCutPalette(rgba, 256)
+		} else {
+			pal = palette.Plan9
+		}
+		dst := image.NewPaletted(bounds, pal)
 		draw.FloydSteinberg.Draw(dst, bounds, rgba, image.Point{X: 0, Y: 0})
 
 		images[i] = dst
