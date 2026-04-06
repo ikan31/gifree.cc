@@ -133,7 +133,7 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
   ]
 
   return (
-    <div className="bg-gray-900 rounded-xl p-4 space-y-4">
+    <div className="bg-slate-900 rounded-xl p-4 space-y-4">
       {/* Tab bar */}
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t) => (
@@ -142,7 +142,7 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
             disabled={t.disabled}
             onClick={() => onTabChange(t.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
-              ${activeTab === t.id ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}
+              ${activeTab === t.id ? 'bg-blue-600 text-white' : 'bg-slate-800 text-gray-400 hover:bg-slate-700'}
               disabled:opacity-30 disabled:cursor-not-allowed`}
           >
             {t.label}
@@ -168,7 +168,7 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
             <input
               value={textConfig.text}
               onChange={(e) => onTextConfigChange({ ...textConfig, text: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-indigo-500"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500"
               placeholder="Enter text…"
             />
           </div>
@@ -177,7 +177,7 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
             <select
               value={textConfig.color}
               onChange={(e) => onTextConfigChange({ ...textConfig, color: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-indigo-500"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500"
             >
               {COLOR_OPTIONS.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
@@ -189,7 +189,7 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
             <select
               value={textConfig.font}
               onChange={(e) => onTextConfigChange({ ...textConfig, font: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-indigo-500"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500"
             >
               {FONT_OPTIONS.map((f) => (
                 <option key={f.value} value={f.value}>{f.label}</option>
@@ -214,7 +214,7 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
                 key={e}
                 onClick={() => onEffectTypeChange(e)}
                 className={`flex-1 py-3 rounded-lg text-sm font-medium transition-colors
-                  ${effectType === e ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+                  ${effectType === e ? 'bg-blue-600 text-white' : 'bg-slate-800 text-gray-400 hover:bg-slate-700'}`}
               >
                 {e === 'grayscale' ? 'Grayscale' : '🍳 Deep Fry'}
               </button>
@@ -263,7 +263,7 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
                   return (
                     <button key={type} onClick={() => setSelectedTransform(type)}
                       className={`w-36 py-2 rounded-lg text-sm font-medium transition-colors
-                        ${selectedTransform === type ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
+                        ${selectedTransform === type ? 'bg-blue-600 text-white' : 'bg-slate-800 text-gray-400 hover:bg-slate-700'}`}>
                       {opt.label}
                     </button>
                   )
@@ -290,7 +290,7 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
                   key={w}
                   onClick={() => { setResizeWidth(String(w)); setResizeHeight('') }}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
-                    ${resizeWidth === String(w) && resizeHeight === '' ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+                    ${resizeWidth === String(w) && resizeHeight === '' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-gray-400 hover:bg-slate-700'}`}
                 >
                   {w}px
                 </button>
@@ -307,7 +307,7 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
                 value={resizeWidth}
                 onChange={(e) => setResizeWidth(e.target.value)}
                 placeholder="auto"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500"
               />
             </div>
             <div>
@@ -319,7 +319,7 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
                 value={resizeHeight}
                 onChange={(e) => setResizeHeight(e.target.value)}
                 placeholder="auto"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500"
               />
             </div>
           </div>
@@ -330,7 +330,7 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
       <button
         onClick={run}
         disabled={busy || (activeTab === 'speed' && speedApplied) || (activeTab === 'transform' && !selectedTransform)}
-        className="w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-colors"
+        className="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-colors"
       >
         {busy ? 'Processing…' : 'Apply'}
       </button>
@@ -373,9 +373,9 @@ function TrimSlider({
   return (
     <div className="space-y-3">
       <div className="relative h-5">
-        <div className="absolute top-1/2 -translate-y-1/2 inset-x-0 h-1.5 bg-gray-700 rounded-full" />
+        <div className="absolute top-1/2 -translate-y-1/2 inset-x-0 h-1.5 bg-slate-700 rounded-full" />
         <div
-          className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-indigo-500 rounded-full pointer-events-none"
+          className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-blue-500 rounded-full pointer-events-none"
           style={{ left: `${leftPct}%`, right: `${100 - rightPct}%` }}
         />
         <input
@@ -425,7 +425,7 @@ function SpeedControl({ factor, onChange }: { factor: number; onChange: (v: numb
             key={o.value}
             onClick={() => onChange(o.value)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
-              ${factor === o.value ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+              ${factor === o.value ? 'bg-blue-600 text-white' : 'bg-slate-800 text-gray-400 hover:bg-slate-700'}`}
           >
             {o.label}
           </button>
@@ -454,7 +454,7 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-indigo-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500"
       />
     </div>
   )

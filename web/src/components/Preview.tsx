@@ -18,7 +18,7 @@ export default function Preview({ src, frames, width, height, size }: Props) {
         key={src}
         src={src}
         alt="GIF preview"
-        className="max-h-60 sm:max-h-96 max-w-full rounded-lg border border-gray-800 object-contain"
+        className="max-h-60 sm:max-h-96 max-w-full rounded-lg border border-slate-800 object-contain"
       />
       {(frames != null || (width != null && height != null) || size != null) && (
         <p className="text-gray-500 text-xs">

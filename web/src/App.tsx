@@ -223,10 +223,10 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="border-b border-gray-800 px-6 py-4 flex justify-center">
+      <header className="border-b border-slate-800 px-6 py-4 flex justify-center">
         <div className="flex items-baseline gap-3">
           <h1 className="text-3xl font-bold tracking-tight">
-            gi<span className="text-indigo-400">free</span>
+            gi<span className="text-blue-400">free</span>
           </h1>
           <p className="text-sm text-gray-600 tracking-wide">simple, server-free gif editing</p>
         </div>
@@ -250,12 +250,12 @@ export default function App() {
             <video
               ref={videoRef}
               src={mp4Pending.previewUrl}
-              className="w-full max-h-60 sm:max-h-96 rounded-lg border border-gray-800 object-contain bg-black"
+              className="w-full max-h-60 sm:max-h-96 rounded-lg border border-slate-800 object-contain bg-black"
               autoPlay
               muted
             />
 
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-5">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
               <p className="text-sm text-gray-400">
                 Convert <span className="text-white font-medium">{mp4Pending.file.name}</span> → GIF
                 <span className="text-gray-600 ml-2">({mp4Pending.duration.toFixed(1)}s)</span>
@@ -279,7 +279,7 @@ export default function App() {
                     <button
                       key={fps}
                       onClick={() => { setMp4Fps(fps); setMp4FpsCustom(false); setMp4FpsRaw('') }}
-                      className={`px-3 py-1 rounded text-sm transition-colors ${!mp4FpsCustom && mp4Fps === fps ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+                      className={`px-3 py-1 rounded text-sm transition-colors ${!mp4FpsCustom && mp4Fps === fps ? 'bg-blue-600 text-white' : 'bg-slate-800 text-gray-400 hover:bg-slate-700'}`}
                     >
                       {fps} fps
                     </button>
@@ -291,7 +291,7 @@ export default function App() {
                     placeholder="Custom"
                     value={mp4FpsCustom ? mp4FpsRaw : ''}
                     onChange={(e) => { setMp4FpsCustom(true); setMp4FpsRaw(e.target.value) }}
-                    className={`w-24 bg-gray-800 border rounded px-2 py-1 text-sm text-white placeholder-gray-600 focus:outline-none ${mp4FpsCustom ? 'border-indigo-500' : 'border-gray-700'}`}
+                    className={`w-24 bg-slate-800 border rounded px-2 py-1 text-sm text-white placeholder-gray-600 focus:outline-none ${mp4FpsCustom ? 'border-blue-500' : 'border-slate-700'}`}
                   />
                 </div>
               </div>
@@ -303,7 +303,7 @@ export default function App() {
               <label className="flex items-center gap-3 cursor-pointer select-none">
                 <div
                   onClick={() => setMp4HighQuality(v => !v)}
-                  className={`relative w-9 h-5 rounded-full transition-colors ${mp4HighQuality ? 'bg-indigo-600' : 'bg-gray-700'}`}
+                  className={`relative w-9 h-5 rounded-full transition-colors ${mp4HighQuality ? 'bg-blue-600' : 'bg-slate-700'}`}
                 >
                   <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${mp4HighQuality ? 'translate-x-4' : ''}`} />
                 </div>
@@ -317,7 +317,7 @@ export default function App() {
                 <button
                   onClick={handleMp4Convert}
                   disabled={uploading || mp4End <= mp4Start}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+                  className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
                 >
                   {uploading ? 'Converting…' : 'Convert to GIF'}
                 </button>
@@ -346,7 +346,7 @@ export default function App() {
                       <div className="flex flex-col items-center gap-2">
                         <div className="relative" key={working!.id}>
                           <img ref={imgRef} src={working!.src}
-                            className="max-h-60 sm:max-h-96 max-w-full rounded-lg border border-gray-800 object-contain block"
+                            className="max-h-60 sm:max-h-96 max-w-full rounded-lg border border-slate-800 object-contain block"
                             onLoad={() => setCropBox(null)} />
                           <CropOverlay key={working!.id} imgRef={imgRef} onChange={setCropBox} />
                         </div>
@@ -356,7 +356,7 @@ export default function App() {
                       <div className="flex flex-col items-center gap-2">
                         <div className="relative" key={working!.id}>
                           <img ref={imgRef} src={working!.src}
-                            className="max-h-60 sm:max-h-96 max-w-full rounded-lg border border-gray-800 object-contain block" />
+                            className="max-h-60 sm:max-h-96 max-w-full rounded-lg border border-slate-800 object-contain block" />
                           <TextOverlay key={working!.id} imgRef={imgRef}
                             text={textConfig.text} color={textConfig.color} font={textConfig.font}
                             onChange={(x, y, size) => setTextPos({ x, y, size })} />
@@ -373,7 +373,7 @@ export default function App() {
                   <div className="flex flex-col items-center gap-2">
                     <div className="relative" key={working!.id}>
                       <img ref={imgRef} src={working!.src}
-                        className="max-h-60 sm:max-h-96 max-w-full rounded-lg border border-gray-800 object-contain block"
+                        className="max-h-60 sm:max-h-96 max-w-full rounded-lg border border-slate-800 object-contain block"
                         onLoad={() => setCropBox(null)} />
                       <CropOverlay key={working!.id} imgRef={imgRef} onChange={setCropBox} />
                     </div>
@@ -383,7 +383,7 @@ export default function App() {
                   <div className="flex flex-col items-center gap-2">
                     <div className="relative" key={working!.id}>
                       <img ref={imgRef} src={working!.src}
-                        className="max-h-60 sm:max-h-96 max-w-full rounded-lg border border-gray-800 object-contain block" />
+                        className="max-h-60 sm:max-h-96 max-w-full rounded-lg border border-slate-800 object-contain block" />
                       <TextOverlay key={working!.id} imgRef={imgRef}
                         text={textConfig.text} color={textConfig.color} font={textConfig.font}
                         onChange={(x, y, size) => setTextPos({ x, y, size })} />
@@ -400,7 +400,7 @@ export default function App() {
                   {['Original', ...opNames].map((step, i) => (
                     <span key={i} className="flex items-center gap-1.5">
                       {i > 0 && <span className="text-gray-600 text-xs">→</span>}
-                      <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 text-xs">
+                      <span className="px-2 py-0.5 rounded-full bg-slate-800 text-gray-400 text-xs">
                         {step}
                       </span>
                     </span>
@@ -436,7 +436,7 @@ export default function App() {
         )}
       </main>
 
-      <footer className="border-t border-gray-800 px-6 py-4 text-center">
+      <footer className="border-t border-slate-800 px-6 py-4 text-center">
         <p className="text-sm text-gray-600">
           Bug or feature request?{' '}
           <a href="mailto:app@gifree.cc" className="text-gray-500 hover:text-gray-400 transition-colors">app@gifree.cc</a>
@@ -487,9 +487,9 @@ function VideoRangeSlider({
   return (
     <div className="space-y-3">
       <div className="relative h-5">
-        <div className="absolute top-1/2 -translate-y-1/2 inset-x-0 h-1.5 bg-gray-700 rounded-full" />
+        <div className="absolute top-1/2 -translate-y-1/2 inset-x-0 h-1.5 bg-slate-700 rounded-full" />
         <div
-          className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-indigo-500 rounded-full pointer-events-none"
+          className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-blue-500 rounded-full pointer-events-none"
           style={{ left: `${leftPct}%`, right: `${100 - rightPct}%` }}
         />
         <input

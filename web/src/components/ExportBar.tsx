@@ -22,7 +22,7 @@ export default function ExportBar({ downloadHref, onReset, onResetEdits, onUndo,
       {onUndo && (
         <button
           onClick={onUndo}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-400 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-gray-400 transition-colors"
         >
           <Undo2 className="w-4 h-4" />
           Undo {undoLabel}
@@ -31,7 +31,7 @@ export default function ExportBar({ downloadHref, onReset, onResetEdits, onUndo,
       {onResetEdits && (
         <button
           onClick={onResetEdits}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-400 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-gray-400 transition-colors"
         >
           <RotateCcw className="w-4 h-4" />
           Reset edits
@@ -39,7 +39,7 @@ export default function ExportBar({ downloadHref, onReset, onResetEdits, onUndo,
       )}
       <button
         onClick={onReset}
-        className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-400 transition-colors"
+        className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-gray-400 transition-colors"
       >
         <RotateCcw className="w-4 h-4" />
         Start over

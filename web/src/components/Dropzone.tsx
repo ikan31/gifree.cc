@@ -25,7 +25,7 @@ export default function Dropzone({ onFile, loading }: Props) {
   return (
     <div
       className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-8 sm:p-12 cursor-pointer transition-colors
-        ${dragging ? 'border-indigo-400 bg-indigo-950/30' : 'border-gray-700 hover:border-gray-500'}
+        ${dragging ? 'border-blue-400 bg-blue-950/30' : 'border-slate-700 hover:border-gray-500'}
         ${loading ? 'opacity-50 pointer-events-none' : ''}`}
       onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
       onDragLeave={() => setDragging(false)}
