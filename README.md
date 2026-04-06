@@ -12,7 +12,7 @@ A simple and local GIF editor that runs entirely in your browser. No uploads, no
 
 ## Features
 
-- **Video to GIF** — convert video to GIF with clip range and fps controls
+- **Video to GIF** — convert video to GIF with clip range, fps controls, and an optional higher quality mode (median cut quantization)
 - **Trim** — cut to any frame range
 - **Crop** — drag to select a region
 - **Resize** — scale to preset widths or custom dimensions
