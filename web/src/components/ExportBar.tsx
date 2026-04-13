@@ -2,22 +2,24 @@ import { Download, RotateCcw, Undo2 } from 'lucide-react'
 
 interface Props {
   downloadHref: string
+  downloadFilename?: string
+  downloadLabel?: string
   onReset: () => void
   onResetEdits?: () => void
   onUndo?: () => void
   undoLabel?: string
 }
 
-export default function ExportBar({ downloadHref, onReset, onResetEdits, onUndo, undoLabel }: Props) {
+export default function ExportBar({ downloadHref, downloadFilename, downloadLabel, onReset, onResetEdits, onUndo, undoLabel }: Props) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
       <a
         href={downloadHref}
-        download="gifree.gif"
+        download={downloadFilename || 'gifree.gif'}
         className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-semibold transition-colors"
       >
         <Download className="w-4 h-4" />
-        Download GIF
+        {downloadLabel || 'Download GIF'}
       </a>
       {onUndo && (
         <button

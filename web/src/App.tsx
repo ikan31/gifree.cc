@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { load, loadMP4, getVideoDuration, restoreId, blobUrl, FileMeta, OpResult } from './wasmApi'
+import { load, loadMP4, getVideoDuration, getVideoHasAudio, restoreId, blobUrl, FileMeta, OpResult } from './wasmApi'
 
 function fmtSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
@@ -20,6 +20,8 @@ import Toolbar, { Tab, TextConfig } from './components/Toolbar'
 import ExportBar from './components/ExportBar'
 import CropOverlay, { CropBox } from './components/CropOverlay'
 import TextOverlay from './components/TextOverlay'
+import VideoConvertPanel from './components/VideoConvertPanel'
+import VideoRangeSlider from './components/VideoRangeSlider'
 
 interface FileState {
   id: string
@@ -38,13 +40,15 @@ export default function App() {
   const [original, setOriginal] = useState<FileState | null>(null)
   const [working, setWorking] = useState<FileState | null>(null)
   const [history, setHistory] = useState<HistoryEntry[]>([])
-  const [mp4Pending, setMp4Pending] = useState<{ file: File; duration: number; previewUrl: string } | null>(null)
+  const [mp4Pending, setMp4Pending] = useState<{ file: File; duration: number; hasAudio: boolean; previewUrl: string } | null>(null)
   const [mp4Start, setMp4Start] = useState(0)
   const [mp4End, setMp4End] = useState(0)
   const [mp4Fps, setMp4Fps] = useState(10)
   const [mp4FpsCustom, setMp4FpsCustom] = useState(false)
   const [mp4FpsRaw, setMp4FpsRaw] = useState('')
   const [mp4HighQuality, setMp4HighQuality] = useState(false)
+  const [videoMode, setVideoMode] = useState<'gif' | 'video' | null>(null)
+  const [videoResult, setVideoResult] = useState<{ url: string; filename: string; size: number; format: string } | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('trim')
   const [cropBox, setCropBox] = useState<CropBox | null>(null)
   const [effectType, setEffectType] = useState<'grayscale' | 'deepfry'>('grayscale')
@@ -64,6 +68,7 @@ export default function App() {
   function clearMp4Pending() {
     if (mp4Pending?.previewUrl) URL.revokeObjectURL(mp4Pending.previewUrl)
     setMp4Pending(null)
+    setVideoMode(null)
   }
 
   async function makeFileState(result: OpResult): Promise<FileState> {
@@ -77,9 +82,12 @@ export default function App() {
     if (file.type.startsWith('video/') || ['.mp4', '.webm', '.mov'].some((ext) => file.name.toLowerCase().endsWith(ext))) {
       setUploading(true)
       try {
-        const duration = await getVideoDuration(file)
+        const [duration, hasAudio] = await Promise.all([
+          getVideoDuration(file),
+          getVideoHasAudio(file),
+        ])
         const previewUrl = URL.createObjectURL(file)
-        setMp4Pending({ file, duration, previewUrl })
+        setMp4Pending({ file, duration, hasAudio, previewUrl })
         setMp4Start(0)
         setMp4End(Math.round(duration * 10) / 10)
         setMp4Fps(10)
@@ -166,6 +174,8 @@ export default function App() {
     setError(null)
     setCropBox(null)
     clearMp4Pending()
+    if (videoResult?.url) URL.revokeObjectURL(videoResult.url)
+    setVideoResult(null)
   }
 
   async function resetEdits() {
@@ -243,9 +253,80 @@ export default function App() {
           </div>
         )}
 
-        {!working && !mp4Pending ? (
+        {videoResult ? (
+          <div className="space-y-4">
+            <video
+              src={videoResult.url}
+              className="w-full max-h-60 sm:max-h-96 rounded-lg border border-slate-800 object-contain bg-black"
+              controls
+              autoPlay
+              muted
+            />
+            <p className="text-center text-sm text-gray-400">
+              <span className="text-white font-medium">{videoResult.filename}</span>
+              <span className="text-gray-600 ml-2">({fmtSize(videoResult.size)})</span>
+            </p>
+            <ExportBar
+              downloadHref={videoResult.url}
+              downloadFilename={videoResult.filename}
+              downloadLabel={`Download ${videoResult.format.toUpperCase()}`}
+              onReset={reset}
+            />
+          </div>
+        ) : !working && !mp4Pending ? (
           <Dropzone onFile={handleFile} loading={uploading} />
-        ) : !working && mp4Pending ? (
+        ) : !working && mp4Pending && videoMode === null ? (
+          <div className="space-y-4">
+            <video
+              src={mp4Pending.previewUrl}
+              className="w-full max-h-60 sm:max-h-96 rounded-lg border border-slate-800 object-contain bg-black"
+              autoPlay
+              muted
+              loop
+            />
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
+              <p className="text-sm text-gray-400">
+                <span className="text-white font-medium">{mp4Pending.file.name}</span>
+                <span className="text-gray-600 ml-2">({mp4Pending.duration.toFixed(1)}s · {fmtSize(mp4Pending.file.size)})</span>
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setVideoMode('gif')}
+                  className="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg p-4 text-left transition-colors"
+                >
+                  <p className="text-sm font-medium text-white">Convert to GIF</p>
+                  <p className="text-xs text-gray-500 mt-1">Animated image with trim &amp; edit tools</p>
+                </button>
+                <button
+                  onClick={() => setVideoMode('video')}
+                  className="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg p-4 text-left transition-colors"
+                >
+                  <p className="text-sm font-medium text-white">Convert video</p>
+                  <p className="text-xs text-gray-500 mt-1">MP4, WebM, or MOV with quality settings</p>
+                </button>
+              </div>
+              <button
+                onClick={clearMp4Pending}
+                className="text-sm text-gray-400 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : !working && mp4Pending && videoMode === 'video' ? (
+          <VideoConvertPanel
+            file={mp4Pending.file}
+            duration={mp4Pending.duration}
+            hasAudio={mp4Pending.hasAudio}
+            previewUrl={mp4Pending.previewUrl}
+            onResult={(result) => {
+              setVideoResult(result)
+              clearMp4Pending()
+            }}
+            onCancel={() => setVideoMode(null)}
+            onError={setError}
+          />
+        ) : !working && mp4Pending && videoMode === 'gif' ? (
           <div className="space-y-4">
             <video
               ref={videoRef}
@@ -322,10 +403,10 @@ export default function App() {
                   {uploading ? 'Converting…' : 'Convert to GIF'}
                 </button>
                 <button
-                  onClick={clearMp4Pending}
+                  onClick={() => setVideoMode(null)}
                   className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
                 >
-                  Cancel
+                  Back
                 </button>
               </div>
             </div>
@@ -450,76 +531,3 @@ export default function App() {
   )
 }
 
-function VideoRangeSlider({
-  duration,
-  start,
-  end,
-  onChange,
-  onCommit,
-}: {
-  duration: number
-  start: number
-  end: number
-  onChange: (start: number, end: number) => void
-  onCommit?: (start: number, end: number) => void
-}) {
-  const step = 0.1
-  const leftPct = (start / duration) * 100
-  const rightPct = (end / duration) * 100
-  const startOnTop = leftPct > 90
-
-  const inputCls =
-    'absolute inset-0 w-full h-full appearance-none bg-transparent ' +
-    'pointer-events-none ' +
-    '[&::-webkit-slider-runnable-track]:appearance-none ' +
-    '[&::-webkit-slider-runnable-track]:bg-transparent ' +
-    '[&::-webkit-slider-thumb]:pointer-events-auto ' +
-    '[&::-webkit-slider-thumb]:appearance-none ' +
-    '[&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 ' +
-    '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white ' +
-    '[&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-grab ' +
-    '[&::-moz-range-track]:bg-transparent ' +
-    '[&::-moz-range-thumb]:pointer-events-auto ' +
-    '[&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 ' +
-    '[&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white ' +
-    '[&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-grab'
-
-  return (
-    <div className="space-y-3">
-      <div className="relative h-5">
-        <div className="absolute top-1/2 -translate-y-1/2 inset-x-0 h-1.5 bg-slate-700 rounded-full" />
-        <div
-          className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-blue-500 rounded-full pointer-events-none"
-          style={{ left: `${leftPct}%`, right: `${100 - rightPct}%` }}
-        />
-        <input
-          type="range"
-          min={0}
-          max={duration}
-          step={step}
-          value={start}
-          onChange={(e) => onChange(Math.min(parseFloat(e.target.value), end - step), end)}
-          onPointerUp={() => onCommit?.(start, end)}
-          className={inputCls}
-          style={{ zIndex: startOnTop ? 5 : 3 }}
-        />
-        <input
-          type="range"
-          min={0}
-          max={duration}
-          step={step}
-          value={end}
-          onChange={(e) => onChange(start, Math.max(parseFloat(e.target.value), start + step))}
-          onPointerUp={() => onCommit?.(start, end)}
-          className={inputCls}
-          style={{ zIndex: startOnTop ? 3 : 5 }}
-        />
-      </div>
-      <div className="flex justify-between text-xs text-gray-500">
-        <span><span className="text-gray-300">{start.toFixed(1)}s</span></span>
-        <span>{duration.toFixed(1)}s total</span>
-        <span><span className="text-gray-300">{end.toFixed(1)}s</span></span>
-      </div>
-    </div>
-  )
-}

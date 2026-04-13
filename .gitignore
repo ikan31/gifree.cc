@@ -2,5 +2,6 @@ web/node_modules/
 web/dist/
 web/public/gifree.wasm
 web/public/wasm_exec.js
+web/public/ffmpeg/
 CLAUDE.md
 .claude/

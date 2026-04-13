@@ -36,7 +36,7 @@ export default function Dropzone({ onFile, loading }: Props) {
       <p className="text-gray-400 text-sm">
         {loading ? 'Loading…' : 'Drop a file here, or click to browse'}
       </p>
-      <p className="text-gray-600 text-xs mt-1">.gif · .mp4 · .webm · .mov</p>
+      <p className="text-gray-600 text-xs mt-1">.gif · .mp4 · .webm · .mov — edit GIFs or convert between formats</p>
       <input
         ref={inputRef}
         type="file"

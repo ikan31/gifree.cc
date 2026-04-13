@@ -1,4 +1,4 @@
-.PHONY: all build-wasm wasm-exec web dev clean fmt lint
+.PHONY: all build-wasm wasm-exec ffmpeg-core web dev clean fmt lint
 
 S3_FRONTEND_BUCKET ?= gifree.cc
 
@@ -12,12 +12,18 @@ wasm-exec:
 build-wasm:
 	GOOS=js GOARCH=wasm go build -ldflags="-s -w" -trimpath -o web/public/gifree.wasm ./cmd/wasm
 
+# Copy ffmpeg-core WASM files for video conversion
+ffmpeg-core:
+	mkdir -p web/public/ffmpeg
+	cp web/node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.js web/public/ffmpeg/
+	cp web/node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.wasm web/public/ffmpeg/
+
 # Build the React frontend (WASM must already be in web/public/)
-web: build-wasm wasm-exec
+web: build-wasm wasm-exec ffmpeg-core
 	cd web && npm install && npm run build
 
 # Local development: build WASM then start Vite
-dev: build-wasm wasm-exec
+dev: build-wasm wasm-exec ffmpeg-core
 	cd web && npm run dev
 
 # Deploy frontend to S3
@@ -37,4 +43,5 @@ lint:
 
 clean:
 	rm -f web/public/gifree.wasm web/public/wasm_exec.js
+	rm -rf web/public/ffmpeg/
 	rm -rf web/dist/ web/node_modules/

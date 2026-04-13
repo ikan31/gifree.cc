@@ -22,6 +22,9 @@ export default defineConfig({
   worker: {
     format: 'es',
   },
+  optimizeDeps: {
+    exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util'],
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,

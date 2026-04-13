@@ -98,6 +98,59 @@ export function getVideoDuration(file: File): Promise<number> {
   })
 }
 
+// Detects whether a video file contains an audio track.
+export function getVideoHasAudio(file: File): Promise<boolean> {
+  return new Promise((resolve) => {
+    const video = document.createElement('video') as HTMLVideoElement & {
+      mozHasAudio?: boolean
+      webkitAudioDecodedByteCount?: number
+      audioTracks?: { length: number }
+    }
+    const url = URL.createObjectURL(file)
+    video.src = url
+    video.muted = true
+    video.preload = 'auto'
+
+    function cleanup() {
+      video.pause()
+      video.removeAttribute('src')
+      video.load()
+      URL.revokeObjectURL(url)
+    }
+
+    video.addEventListener('loadeddata', () => {
+      // Safari exposes audioTracks
+      if (video.audioTracks && video.audioTracks.length > 0) {
+        cleanup()
+        resolve(true)
+        return
+      }
+      // Firefox
+      if (typeof video.mozHasAudio === 'boolean') {
+        cleanup()
+        resolve(video.mozHasAudio)
+        return
+      }
+      // Chrome/Edge — need a brief play to populate webkitAudioDecodedByteCount
+      video.play().then(() => {
+        setTimeout(() => {
+          const has = (video.webkitAudioDecodedByteCount ?? 0) > 0
+          cleanup()
+          resolve(has)
+        }, 150)
+      }).catch(() => {
+        cleanup()
+        resolve(false)
+      })
+    })
+
+    video.addEventListener('error', () => {
+      URL.revokeObjectURL(url)
+      resolve(false)
+    })
+  })
+}
+
 function seekTo(video: HTMLVideoElement, time: number): Promise<void> {
   return new Promise((resolve) => {
     video.currentTime = time
