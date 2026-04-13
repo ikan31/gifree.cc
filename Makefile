@@ -19,8 +19,10 @@ ffmpeg-core:
 	cp web/node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.wasm web/public/ffmpeg/
 
 # Build the React frontend (WASM must already be in web/public/)
-web: build-wasm wasm-exec ffmpeg-core
-	cd web && npm install && npm run build
+web: build-wasm wasm-exec
+	cd web && npm install
+	$(MAKE) ffmpeg-core
+	cd web && npm run build
 
 # Local development: build WASM then start Vite
 dev: build-wasm wasm-exec ffmpeg-core
