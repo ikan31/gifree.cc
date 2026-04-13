@@ -1,6 +1,6 @@
 # gifree.cc
 
-gifree.cc - A simple and local GIF editor and video converter that runs entirely in your browser. No uploads, no accounts, no servers — your files never leave your device. Use the website or run locally on your machine.
+[gifree.cc](https://gifree.cc) - A simple and local GIF editor and video converter that runs entirely in your browser. No uploads, no accounts, no servers - your files never leave your device. Use the website or run locally on your machine.
 
 <div align="center">
 
