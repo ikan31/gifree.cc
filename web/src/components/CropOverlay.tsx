@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { getImageRect } from '../utils'
 
 export interface CropBox {
   x: number
@@ -19,21 +20,6 @@ interface PixelBox {
   y: number
   w: number
   h: number
-}
-
-function getImageRect(img: HTMLImageElement): DOMRect {
-  const c = img.getBoundingClientRect()
-  const natRatio = img.naturalWidth / img.naturalHeight
-  const containerRatio = c.width / c.height
-  let rW: number, rH: number
-  if (natRatio > containerRatio) {
-    rW = c.width
-    rH = c.width / natRatio
-  } else {
-    rH = c.height
-    rW = c.height * natRatio
-  }
-  return new DOMRect(c.left + (c.width - rW) / 2, c.top + (c.height - rH) / 2, rW, rH)
 }
 
 function clamp(v: number, min: number, max: number) {

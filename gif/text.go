@@ -77,7 +77,7 @@ func AddText(gif *gifstd.GIF, opts TextOptions) (*gifstd.GIF, error) {
 		pt := freetype.Pt(x, y)
 		_, err := context.DrawString(opts.Text, pt)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to raw string frame %d: %w", index, err)
+			return nil, fmt.Errorf("Failed to draw string frame %d: %w", index, err)
 		}
 
 		// Convert back to paletted using the original palette.

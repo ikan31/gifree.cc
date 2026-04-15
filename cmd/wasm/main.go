@@ -17,19 +17,47 @@ var (
 	current             *stdgif.GIF //nolint:gochecknoglobals // holds WASM working state between JS calls
 	ErrUnknownEffect    = errors.New("unknown effect")
 	ErrUnknownTransform = errors.New("unknown transform type")
+	ErrNoGIFLoaded      = errors.New("no GIF loaded")
 )
 
+func requireCurrent() error {
+	if current == nil {
+		return ErrNoGIFLoaded
+	}
+	return nil
+}
+
+func requireArgs(args []js.Value, n int) error {
+	if len(args) < n {
+		return fmt.Errorf("expected %d argument(s), got %d", n, len(args))
+	}
+	return nil
+}
+
+// safeCall wraps a js.FuncOf handler so that a Go panic is caught and returned
+// as a JS error result instead of silently killing the WASM goroutine.
+func safeCall(fn func(js.Value, []js.Value) any) func(js.Value, []js.Value) any {
+	return func(this js.Value, args []js.Value) (ret any) {
+		defer func() {
+			if r := recover(); r != nil {
+				ret = resultErr(fmt.Errorf("internal error: %v", r))
+			}
+		}()
+		return fn(this, args)
+	}
+}
+
 func main() {
-	js.Global().Set("gifLoad", js.FuncOf(jsLoad))
-	js.Global().Set("gifTrim", js.FuncOf(jsTrim))
-	js.Global().Set("gifCrop", js.FuncOf(jsCrop))
-	js.Global().Set("gifSpeed", js.FuncOf(jsSpeed))
-	js.Global().Set("gifText", js.FuncOf(jsText))
-	js.Global().Set("gifEffect", js.FuncOf(jsEffect))
-	js.Global().Set("gifResize", js.FuncOf(jsResize))
-	js.Global().Set("gifFromFrames", js.FuncOf(jsFromFrames))
-	js.Global().Set("gifReverse", js.FuncOf(jsReverse))
-	js.Global().Set("gifTransform", js.FuncOf(jsTransform))
+	js.Global().Set("gifLoad", js.FuncOf(safeCall(jsLoad)))
+	js.Global().Set("gifTrim", js.FuncOf(safeCall(jsTrim)))
+	js.Global().Set("gifCrop", js.FuncOf(safeCall(jsCrop)))
+	js.Global().Set("gifSpeed", js.FuncOf(safeCall(jsSpeed)))
+	js.Global().Set("gifText", js.FuncOf(safeCall(jsText)))
+	js.Global().Set("gifEffect", js.FuncOf(safeCall(jsEffect)))
+	js.Global().Set("gifResize", js.FuncOf(safeCall(jsResize)))
+	js.Global().Set("gifFromFrames", js.FuncOf(safeCall(jsFromFrames)))
+	js.Global().Set("gifReverse", js.FuncOf(safeCall(jsReverse)))
+	js.Global().Set("gifTransform", js.FuncOf(safeCall(jsTransform)))
 	js.Global().Call("gifWASMReady")
 	select {}
 }
@@ -65,6 +93,9 @@ func resultErr(err error) map[string]any {
 }
 
 func jsLoad(_ js.Value, args []js.Value) any {
+	if err := requireArgs(args, 1); err != nil {
+		return resultErr(err)
+	}
 	src := args[0]
 	data := make([]byte, src.Length())
 	js.CopyBytesToGo(data, src)
@@ -78,6 +109,12 @@ func jsLoad(_ js.Value, args []js.Value) any {
 }
 
 func jsTrim(_ js.Value, args []js.Value) any {
+	if err := requireCurrent(); err != nil {
+		return resultErr(err)
+	}
+	if err := requireArgs(args, 2); err != nil {
+		return resultErr(err)
+	}
 	start := args[0].Int()
 	end := args[1].Int()
 	result, err := gif.Trim(current, start, end)
@@ -90,6 +127,12 @@ func jsTrim(_ js.Value, args []js.Value) any {
 }
 
 func jsCrop(_ js.Value, args []js.Value) any {
+	if err := requireCurrent(); err != nil {
+		return resultErr(err)
+	}
+	if err := requireArgs(args, 4); err != nil {
+		return resultErr(err)
+	}
 	x := args[0].Int()
 	y := args[1].Int()
 	width := args[2].Int()
@@ -104,6 +147,12 @@ func jsCrop(_ js.Value, args []js.Value) any {
 }
 
 func jsSpeed(_ js.Value, args []js.Value) any {
+	if err := requireCurrent(); err != nil {
+		return resultErr(err)
+	}
+	if err := requireArgs(args, 1); err != nil {
+		return resultErr(err)
+	}
 	factor := args[0].Float()
 	result, err := gif.Speed(current, factor)
 	if err != nil {
@@ -115,6 +164,12 @@ func jsSpeed(_ js.Value, args []js.Value) any {
 }
 
 func jsText(_ js.Value, args []js.Value) any {
+	if err := requireCurrent(); err != nil {
+		return resultErr(err)
+	}
+	if err := requireArgs(args, 6); err != nil {
+		return resultErr(err)
+	}
 	text := args[0].String()
 	size := args[1].Float()
 	clr := gif.ParseColor(args[2].String())
@@ -138,6 +193,12 @@ func jsText(_ js.Value, args []js.Value) any {
 }
 
 func jsEffect(_ js.Value, args []js.Value) any {
+	if err := requireCurrent(); err != nil {
+		return resultErr(err)
+	}
+	if err := requireArgs(args, 1); err != nil {
+		return resultErr(err)
+	}
 	effectType := args[0].String()
 	var (
 		result *stdgif.GIF
@@ -160,6 +221,9 @@ func jsEffect(_ js.Value, args []js.Value) any {
 }
 
 func jsFromFrames(_ js.Value, args []js.Value) any {
+	if err := requireArgs(args, 6); err != nil {
+		return resultErr(err)
+	}
 	flatJS := args[0]
 	width := args[1].Int()
 	height := args[2].Int()
@@ -187,6 +251,9 @@ func jsFromFrames(_ js.Value, args []js.Value) any {
 }
 
 func jsReverse(_ js.Value, _ []js.Value) any {
+	if err := requireCurrent(); err != nil {
+		return resultErr(err)
+	}
 	result, err := gif.Reverse(current)
 	if err != nil {
 		return resultErr(err)
@@ -197,6 +264,12 @@ func jsReverse(_ js.Value, _ []js.Value) any {
 }
 
 func jsTransform(_ js.Value, args []js.Value) any {
+	if err := requireCurrent(); err != nil {
+		return resultErr(err)
+	}
+	if err := requireArgs(args, 1); err != nil {
+		return resultErr(err)
+	}
 	transformType := args[0].String()
 	var (
 		result *stdgif.GIF
@@ -225,6 +298,12 @@ func jsTransform(_ js.Value, args []js.Value) any {
 }
 
 func jsResize(_ js.Value, args []js.Value) any {
+	if err := requireCurrent(); err != nil {
+		return resultErr(err)
+	}
+	if err := requireArgs(args, 2); err != nil {
+		return resultErr(err)
+	}
 	width := args[0].Int()
 	height := args[1].Int()
 	result, err := gif.Resize(current, width, height)

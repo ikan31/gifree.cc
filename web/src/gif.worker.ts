@@ -1,5 +1,6 @@
 // Loads Go WASM and handles all GIF processing in a background thread.
 // The main thread never touches the WASM binary directly.
+import { fmtSize } from './utils'
 export {}
 
 // wasm_exec.js is not an ES module so we fetch and eval it instead of importing
@@ -114,7 +115,3 @@ function opLogArgs(op: string, args: Record<string, any>): Record<string, any> {
   }
 }
 
-function fmtSize(bytes: number): string {
-  if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
-  return (bytes / 1024).toFixed(1) + ' KB'
-}

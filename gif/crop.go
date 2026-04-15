@@ -18,6 +18,10 @@ func Crop(gif *gifstd.GIF, cropOptions CropOptions) (*gifstd.GIF, error) {
 		return nil, ErrCropDimensions
 	}
 
+	if len(gif.Image) == 0 {
+		return nil, ErrNoFrames
+	}
+
 	bounds := gif.Image[0].Bounds()
 
 	if cropOptions.X < 0 || cropOptions.Y < 0 || cropOptions.X+cropOptions.Width > bounds.Max.X ||

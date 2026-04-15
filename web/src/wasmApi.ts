@@ -1,4 +1,5 @@
 import GifWorker from './gif.worker?worker'
+import { fmtSize } from './utils'
 
 export interface FileMeta {
   type: 'gif'
@@ -192,7 +193,11 @@ async function extractMP4Frames(
         }
 
         const frameSize = width * height * 4
-        const flat = new Uint8Array(times.length * frameSize)
+        const totalBytes = times.length * frameSize
+        if (totalBytes > 500 * 1024 * 1024) {
+          console.warn(`[gifree] extractMP4Frames: allocating ${fmtSize(totalBytes)} for ${times.length} frames — this may cause the browser to run out of memory`)
+        }
+        const flat = new Uint8Array(totalBytes)
 
         const t0 = performance.now()
         for (let i = 0; i < times.length; i++) {
@@ -227,11 +232,6 @@ export async function loadMP4(file: File, fps: number, startSec: number, endSec:
   console.log(`[gifree] load video: name="${file.name}" size=${fmtSize(file.size)} type="${file.type}" fps=${fps} range=${startSec.toFixed(2)}s–${endSec.toFixed(2)}s highQuality=${highQuality}`)
   const { flat, width, height, frameCount } = await extractMP4Frames(file, fps, startSec, endSec)
   return call('fromFrames', { flat, width, height, frameCount, fps, highQuality }, [flat.buffer])
-}
-
-function fmtSize(bytes: number): string {
-  if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
-  return (bytes / 1024).toFixed(1) + ' KB'
 }
 
 // Returns a blob: URL for the given id (preview or download)

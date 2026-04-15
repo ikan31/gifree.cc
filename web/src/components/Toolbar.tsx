@@ -23,6 +23,7 @@ interface Props {
   textPos: { x: number; y: number; size: number } | null
   onResult: (result: OpResult, opName: string) => void
   onError: (msg: string) => void
+  disabled?: boolean
 }
 
 const COLOR_OPTIONS = [
@@ -38,7 +39,16 @@ const FONT_OPTIONS = [
   { value: 'smallcaps', label: 'Small Caps' },
 ]
 
-export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, speedApplied, effectType, onEffectTypeChange, textConfig, onTextConfigChange, textPos, onResult, onError }: Props) {
+const TRANSFORM_OPTIONS: { type: TransformType | 'reverse'; label: string; desc: string }[] = [
+  { type: 'fliph',       label: 'Flip Horizontally', desc: 'Mirror the GIF left-to-right. Like holding it up to a mirror.' },
+  { type: 'flipv',       label: 'Flip Vertically',   desc: 'Mirror the GIF top-to-bottom. The top row becomes the bottom row.' },
+  { type: 'rotate90cw',  label: 'Rotate 90° CW',    desc: 'Rotate 90° clockwise. What was on the left is now on the top.' },
+  { type: 'rotate90ccw', label: 'Rotate 90° CCW',   desc: 'Rotate 90° counter-clockwise. What was on the right is now on the top.' },
+  { type: 'rotate180',   label: 'Rotate 180°',       desc: 'Flip both axes — same as flipping horizontally then vertically.' },
+  { type: 'reverse',     label: 'Reverse',            desc: 'Play the frames in reverse order.' },
+]
+
+export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, speedApplied, effectType, onEffectTypeChange, textConfig, onTextConfigChange, textPos, onResult, onError, disabled }: Props) {
   const [busy, setBusy] = useState(false)
 
   // trim fields
@@ -54,7 +64,6 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
 
   // transform fields
   const [selectedTransform, setSelectedTransform] = useState<TransformType | 'reverse' | null>(null)
-
 
   async function run() {
     setBusy(true)
@@ -113,15 +122,6 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
     }
   }
 
-  const TRANSFORM_OPTIONS: { type: TransformType | 'reverse'; label: string; desc: string }[] = [
-    { type: 'fliph',       label: 'Flip Horizontally', desc: 'Mirror the GIF left-to-right. Like holding it up to a mirror.' },
-    { type: 'flipv',       label: 'Flip Vertically',   desc: 'Mirror the GIF top-to-bottom. The top row becomes the bottom row.' },
-    { type: 'rotate90cw',  label: 'Rotate 90° CW',    desc: 'Rotate 90° clockwise. What was on the left is now on the top.' },
-    { type: 'rotate90ccw', label: 'Rotate 90° CCW',   desc: 'Rotate 90° counter-clockwise. What was on the right is now on the top.' },
-    { type: 'rotate180',   label: 'Rotate 180°',       desc: 'Flip both axes — same as flipping horizontally then vertically.' },
-    { type: 'reverse',     label: 'Reverse',            desc: 'Play the frames in reverse order.' },
-  ]
-
   const tabs: { id: Tab; label: string; disabled?: boolean }[] = [
     { id: 'trim', label: 'Trim' },
     { id: 'text', label: 'Text' },
@@ -133,7 +133,7 @@ export default function Toolbar({ meta, activeTab, onTabChange, cropSelection, s
   ]
 
   return (
-    <div className="bg-slate-900 rounded-xl p-4 space-y-4">
+    <div className={`bg-slate-900 rounded-xl p-4 space-y-4${disabled ? ' opacity-50 pointer-events-none select-none' : ''}`}>
       {/* Tab bar */}
       <div className="flex gap-2 flex-wrap">
         {tabs.map((t) => (
@@ -436,26 +436,3 @@ function SpeedControl({ factor, onChange }: { factor: number; onChange: (v: numb
   )
 }
 
-function Field({
-  label,
-  value,
-  onChange,
-  placeholder,
-}: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-  placeholder?: string
-}) {
-  return (
-    <div>
-      <label className="block text-xs text-gray-400 mb-1">{label}</label>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-blue-500"
-      />
-    </div>
-  )
-}

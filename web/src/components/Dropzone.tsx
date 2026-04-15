@@ -4,9 +4,11 @@ import { Upload } from 'lucide-react'
 interface Props {
   onFile: (file: File) => void
   loading: boolean
+  accept?: string
+  helpText?: string
 }
 
-export default function Dropzone({ onFile, loading }: Props) {
+export default function Dropzone({ onFile, loading, accept = '.gif,.mp4,.webm,.mov,video/mp4,video/webm,video/quicktime', helpText }: Props) {
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -36,11 +38,11 @@ export default function Dropzone({ onFile, loading }: Props) {
       <p className="text-gray-400 text-sm">
         {loading ? 'Loading…' : 'Drop a file here, or click to browse'}
       </p>
-      <p className="text-gray-600 text-xs mt-1">.gif · .mp4 · .webm · .mov — edit GIFs or convert between formats</p>
+      <p className="text-gray-600 text-xs mt-1">{helpText ?? '.gif · .mp4 · .webm · .mov'}</p>
       <input
         ref={inputRef}
         type="file"
-        accept=".gif,.mp4,.webm,.mov,video/mp4,video/webm,video/quicktime"
+        accept={accept}
         className="hidden"
         onChange={handleChange}
       />

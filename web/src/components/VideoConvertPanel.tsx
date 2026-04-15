@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { convertVideo, cancelConversion, onStatus, VideoConvertResult } from '../ffmpegApi'
 import VideoRangeSlider from './VideoRangeSlider'
+import { fmtSize } from '../utils'
 
 interface Props {
   file: File
@@ -15,11 +16,6 @@ interface Props {
 type Format = 'mp4' | 'webm' | 'mov'
 type Quality = 'low' | 'medium' | 'high'
 type Resolution = 'original' | '1080p' | '720p' | '480p'
-
-function fmtSize(bytes: number): string {
-  if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
-  return (bytes / 1024).toFixed(1) + ' KB'
-}
 
 function defaultOutputFormat(inputName: string): Format {
   const ext = inputName.split('.').pop()?.toLowerCase()

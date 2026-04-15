@@ -37,12 +37,12 @@ func Grayscale(gif *gifstd.GIF) (*gifstd.GIF, error) {
 		// For each Pixel - do adjustments
 		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 			for x := bounds.Min.X; x < bounds.Max.X; x++ {
-				r, gv, bl, a := rgba.At(x, y).RGBA()
-				lum := uint8((0.299*float64(r) + 0.587*float64(gv) + 0.114*float64(bl)) / 257)
+				c := rgba.RGBAAt(x, y)
+				lum := uint8(0.299*float64(c.R) + 0.587*float64(c.G) + 0.114*float64(c.B))
 				rgba.SetRGBA(
 					x,
 					y,
-					color.RGBA{R: lum, G: lum, B: lum, A: uint8(a >> 8)}, //nolint:gosec
+					color.RGBA{R: lum, G: lum, B: lum, A: c.A},
 				)
 			}
 		}
@@ -84,10 +84,11 @@ func DeepFry(gif *gifstd.GIF) (*gifstd.GIF, error) {
 		// Pass 1: saturation boost + contrast crush + warm tint + noise
 		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 			for x := bounds.Min.X; x < bounds.Max.X; x++ {
-				r32, g32, bl32, a32 := rgbaImage.At(x, y).RGBA()
-				r := float64(r32 >> 8)
-				gv := float64(g32 >> 8)
-				bl := float64(bl32 >> 8)
+				c := rgbaImage.RGBAAt(x, y)
+				r := float64(c.R)
+				gv := float64(c.G)
+				bl := float64(c.B)
+				a32 := c.A
 
 				r, gv, bl = applySaturationBoost(r, gv, bl)
 				r, gv, bl = applyWarmTint(r, gv, bl)
@@ -98,7 +99,7 @@ func DeepFry(gif *gifstd.GIF) (*gifstd.GIF, error) {
 					R: clampU8(r),
 					G: clampU8(gv),
 					B: clampU8(bl),
-					A: uint8(a32 >> 8), //nolint:gosec
+					A: a32,
 				})
 			}
 		}
@@ -152,19 +153,18 @@ func sharpenRGBA(sourceImage *image.RGBA, bounds image.Rectangle) *image.RGBA {
 					if py >= bounds.Max.Y {
 						py = bounds.Max.Y - 1
 					}
-					r32, g32, bl32, _ := sourceImage.At(px, py).RGBA()
+					nc := sourceImage.RGBAAt(px, py)
 					w := kernel[ky][kx]
-					r += float64(r32>>8) * w
-					gv += float64(g32>>8) * w
-					bl += float64(bl32>>8) * w
+					r += float64(nc.R) * w
+					gv += float64(nc.G) * w
+					bl += float64(nc.B) * w
 				}
 			}
-			_, _, _, a32 := sourceImage.At(x, y).RGBA()
 			dst.SetRGBA(x, y, color.RGBA{
 				R: clampU8(r),
 				G: clampU8(gv),
 				B: clampU8(bl),
-				A: uint8(a32 >> 8), //nolint:gosec
+				A: sourceImage.RGBAAt(x, y).A,
 			})
 		}
 	}
